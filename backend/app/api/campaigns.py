@@ -35,6 +35,16 @@ def get_campaign(campaign_id: int):
         ).fetchall()
         return {"campaign": dict(row), "cards": rows_to_dicts(cards)}
 
+@router.delete("/campaigns/{campaign_id}")
+def delete_campaign(campaign_id: int):
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Campaign not found.")
+        conn.execute("UPDATE task_cards SET campaign_id = NULL WHERE campaign_id = ?", (campaign_id,))
+        conn.execute("DELETE FROM campaigns WHERE id = ?", (campaign_id,))
+        return {"deleted": campaign_id}
+
 @router.patch("/campaigns/{campaign_id}")
 def update_campaign(campaign_id: int, payload: CampaignUpdate):
     with get_conn() as conn:

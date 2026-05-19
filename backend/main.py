@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Local Social Agent MVP",
-    version="0.2.1",
+    version="0.3.3",
     description="Draft-first local social media agent command center with visual AI task cards.",
     lifespan=lifespan,
 )
@@ -30,7 +30,7 @@ app.add_middleware(
 def root():
     return {
         "name": "Local Social Agent MVP",
-        "version": "0.2.1",
+        "version": "0.3.3",
         "mode": "visual-ai-task-cards",
         "publishing_enabled": False,
     }

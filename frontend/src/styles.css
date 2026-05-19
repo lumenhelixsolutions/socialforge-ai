@@ -1424,3 +1424,101 @@ dt { color: #8b949e; } dd { margin: 0; }
   border-radius: 8px;
   padding: 10px;
 }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #1c2128;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #e6edf3;
+  min-width: 240px;
+  max-width: 380px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  pointer-events: all;
+  animation: toast-in .18s ease;
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.toast-success { border-color: #238636; }
+.toast-error   { border-color: #8a3030; }
+.toast-info    { border-color: #1f6feb; }
+.toast-close {
+  background: none;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.toast-close:hover { color: #e6edf3; }
+
+/* Health tab overhaul */
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) { .health-grid { grid-template-columns: 1fr; } }
+
+.health-audit { grid-column: 1 / -1; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+@media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.stat-cell {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  display: grid;
+  gap: 3px;
+}
+.stat-count { font-size: 22px; font-weight: 700; color: #e6edf3; }
+.stat-label { font-size: 11px; color: #8b949e; text-transform: capitalize; }
+
+.audit-row {
+  border-bottom: 1px solid #21262d;
+  padding: 8px 0;
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.audit-row:last-child { border-bottom: none; }
+.audit-row-main { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.audit-entity {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.audit-row-states {
+  display: flex;
+  gap: 5px;
+  color: #8b949e;
+  font-size: 11px;
+}

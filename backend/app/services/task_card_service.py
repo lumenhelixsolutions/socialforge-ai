@@ -499,6 +499,34 @@ def export_task_card(card_id: int) -> dict[str, Any]:
         }
     }
 
+def duplicate_task_card(card_id: int) -> dict[str, Any]:
+    card = get_task_card(card_id)
+    if not card:
+        raise ValueError("Task card not found.")
+    workflow_state = "drafting" if card["model_lane"] == "raw" else "idea"
+    approval_state = "raw_draft_only" if card["model_lane"] == "raw" else "not_reviewed"
+    with get_conn() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO task_cards (
+                title, card_type, objective, output_type, brand_id, campaign_id,
+                platform, source_material, ai_role, model_lane, constraints,
+                workflow_rule, execution_plan, preview, workflow_state, approval_state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                f"{card['title']} (copy)", card["card_type"], card["objective"],
+                card["output_type"], card["brand_id"], card["campaign_id"],
+                card["platform"], card["source_material"], card["ai_role"],
+                card["model_lane"], card["constraints"], card["workflow_rule"],
+                card["execution_plan"], card["preview"], workflow_state, approval_state,
+            ),
+        )
+        new_id = cur.lastrowid
+        _audit(conn, new_id, "created_as_duplicate", None, workflow_state)
+        row = conn.execute("SELECT * FROM task_cards WHERE id = ?", (new_id,)).fetchone()
+        return dict(row)
+
 def delete_task_card(card_id: int) -> dict[str, Any]:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()

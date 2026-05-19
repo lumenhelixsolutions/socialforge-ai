@@ -8,6 +8,7 @@ from app.services.task_card_service import (
     analyze_preview_text,
     create_task_card,
     delete_task_card,
+    duplicate_task_card,
     export_task_card,
     explain_card,
     get_card_history,
@@ -89,6 +90,13 @@ def move_card(card_id: int, payload: TaskCardMove):
 async def card_action(card_id: int, payload: TaskCardAction):
     try:
         return await run_card_action(card_id, payload)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+@router.post("/task-cards/{card_id}/duplicate")
+def dup_card(card_id: int):
+    try:
+        return duplicate_task_card(card_id)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

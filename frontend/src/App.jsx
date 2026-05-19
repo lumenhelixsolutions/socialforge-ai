@@ -1,4 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+class ErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error("Render error:", error, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: "monospace" }}>
+          <h2 style={{ color: "#ff7b72" }}>Render error</h2>
+          <pre style={{ color: "#c9d1d9", background: "#0d1117", padding: 16, borderRadius: 8 }}>
+            {this.state.error.message}
+          </pre>
+          <button onClick={() => this.setState({ error: null })} style={{ marginTop: 12, padding: "8px 16px", cursor: "pointer" }}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -116,6 +138,13 @@ function App() {
   const [cards, setCards] = useState([]);
   const [meta, setMeta] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback((message, type = "info") => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+  }, []);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [error, setError] = useState("");
@@ -162,6 +191,7 @@ function App() {
 
   return (
     <div className="app">
+      <ToastContainer toasts={toasts} dismiss={id => setToasts(prev => prev.filter(t => t.id !== id))} />
       <aside className="sidebar">
         <div className="brandmark">
           <div className="logo">SF</div>
@@ -242,7 +272,12 @@ function App() {
           )}
 
           {tab === "health" && (
-            <Health diagnostics={diagnostics} refresh={refreshAll} />
+            <Health
+              diagnostics={diagnostics}
+              availableModels={availableModels}
+              cards={cards}
+              refresh={refreshAll}
+            />
           )}
         </section>
 
@@ -256,6 +291,7 @@ function App() {
           refresh={refreshAll}
           selectCard={selectCard}
           setError={setError}
+          addToast={addToast}
         />
       </main>
     </div>
@@ -773,7 +809,7 @@ function RiskBreakdown({ card }) {
   );
 }
 
-function JobInspector({ detail, selectedCard, platformPreviewRules, brands, campaigns, availableModels, refresh, selectCard, setError }) {
+function JobInspector({ detail, selectedCard, platformPreviewRules, brands, campaigns, availableModels, refresh, selectCard, setError, addToast }) {
   const card = detail?.card || selectedCard;
   const [schedule, setSchedule] = useState("");
   const [running, setRunning] = useState("");
@@ -875,10 +911,23 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
     );
   }
 
+  async function duplicateCard() {
+    if (!window.confirm(`Duplicate "${card.title}"? A copy will be created in ${card.model_lane === "raw" ? "Drafting" : "Idea"} state.`)) return;
+    try {
+      const copy = await api.duplicateTaskCard(card.id);
+      addToast?.(`Duplicated as "${copy.title}"`, "success");
+      await refresh(copy.id);
+      await selectCard(copy.id);
+    } catch (err) {
+      setError(readableError(err));
+    }
+  }
+
   async function deleteCard() {
     if (!window.confirm(`Permanently delete "${card.title}"? This cannot be undone.`)) return;
     try {
       await api.deleteTaskCard(card.id);
+      addToast?.(`Deleted "${card.title}"`, "info");
       await refresh(null);
     } catch (err) {
       setError(readableError(err));
@@ -1102,9 +1151,10 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
           </section>
 
           <section className="inspector-section">
-            <h3>Export</h3>
-            <button className="action-grid-full" onClick={exportCard}>↓ Export card as JSON</button>
-            <small>Downloads a JSON file you can re-import to create a new card.</small>
+            <h3>Duplicate &amp; export</h3>
+            <button className="action-grid-full" onClick={duplicateCard}>⊕ Duplicate card</button>
+            <button className="action-grid-full" onClick={exportCard} style={{ marginTop: 6 }}>↓ Export card as JSON</button>
+            <small>Duplicate creates an identical card in Idea/Drafting state. Export downloads JSON you can re-import.</small>
           </section>
 
           <section className="inspector-section">
@@ -1381,27 +1431,103 @@ function nextSevenDays() {
   });
 }
 
-function Health({ diagnostics, refresh }) {
+function Health({ diagnostics, availableModels, cards, refresh }) {
+  const [auditLog, setAuditLog] = useState([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
+  useEffect(() => {
+    setLoadingAudit(true);
+    api.auditLog(40).then(setAuditLog).catch(() => {}).finally(() => setLoadingAudit(false));
+  }, []);
+
+  const stateCounts = useMemo(() => {
+    const counts = {};
+    for (const card of cards) counts[card.workflow_state] = (counts[card.workflow_state] || 0) + 1;
+    return counts;
+  }, [cards]);
+
+  const stateOrder = ["inbox", "idea", "drafting", "needs_review", "needs_edit", "approved", "scheduled", "archived"];
+
   return (
     <section>
       <header className="page-header">
         <div>
           <h1>System Health</h1>
-          <p>The app fails soft and keeps local fallback drafting available when Ollama is offline.</p>
+          <p>Diagnostics, DB stats, available models, and recent activity log.</p>
         </div>
-        <button className="primary" onClick={() => refresh()}><Activity size={16}/> Run Diagnostics</button>
+        <button className="primary" onClick={() => refresh()}><Activity size={16}/> Refresh</button>
       </header>
 
-      <div className="card">
-        {!diagnostics && <p>No diagnostics loaded.</p>}
-        {diagnostics?.checks?.map(c => (
-          <div className="check" key={c.name}>
-            <CheckCircle size={17} className={c.ok ? "ok" : "warn"} />
-            <div><strong>{c.name}</strong><span>{c.message}</span></div>
+      <div className="health-grid">
+        <div className="card">
+          <h2>Diagnostics</h2>
+          {!diagnostics && <p className="muted">No diagnostics loaded.</p>}
+          {diagnostics?.checks?.map(c => (
+            <div className="check" key={c.name}>
+              <CheckCircle size={17} className={c.ok ? "ok" : "warn"} />
+              <div><strong>{c.name}</strong><span>{c.message}</span></div>
+            </div>
+          ))}
+        </div>
+
+        <div className="card">
+          <h2>Board stats <span className="muted">({cards.length} cards total)</span></h2>
+          <div className="stat-grid">
+            {stateOrder.map(state => (
+              <div key={state} className="stat-cell">
+                <span className="stat-count">{stateCounts[state] || 0}</span>
+                <span className="stat-label">{state.replaceAll("_", " ")}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        <div className="card">
+          <h2>Local models</h2>
+          {availableModels.length === 0 && <p className="muted">Ollama offline or no models installed.</p>}
+          {availableModels.map(m => (
+            <div key={m} className="check">
+              <CheckCircle size={15} className="ok" />
+              <span>{m}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="card health-audit">
+          <h2>Recent activity</h2>
+          {loadingAudit && <p className="muted">Loading…</p>}
+          {!loadingAudit && auditLog.length === 0 && <p className="muted">No audit events yet.</p>}
+          {auditLog.map(ev => (
+            <div className="audit-row" key={ev.id}>
+              <div className="audit-row-main">
+                <span className="audit-entity">{ev.entity_type}</span>
+                <strong>{ev.action.replaceAll("_", " ")}</strong>
+                {ev.card_title && <span className="muted">"{ev.card_title}"</span>}
+              </div>
+              <div className="audit-row-states">
+                {ev.before_state && <span>{ev.before_state}</span>}
+                {ev.before_state && ev.after_state && <span>→</span>}
+                {ev.after_state && <span>{ev.after_state}</span>}
+              </div>
+              <small className="muted">{ev.created_at}</small>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+function ToastContainer({ toasts, dismiss }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div key={toast.id} className={`toast toast-${toast.type}`}>
+          <span>{toast.message}</span>
+          <button className="toast-close" onClick={() => dismiss(toast.id)}><X size={13}/></button>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1760,6 +1886,17 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
     }
   }
 
+  async function deleteCampaign(e, campaign) {
+    e.stopPropagation();
+    if (!window.confirm(`Delete campaign "${campaign.name}"? Linked task cards will have their campaign removed.`)) return;
+    try {
+      await api.deleteCampaign(campaign.id);
+      await refresh();
+    } catch (err) {
+      setError(readableError(err));
+    }
+  }
+
   return (
     <section>
       <header className="page-header">
@@ -1799,6 +1936,7 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
                         <span className={`badge ${camp.status === "closed" ? "" : "badge-active"}`}>{camp.status}</span>
                         <span className="badge">{campCards.length} card{campCards.length !== 1 ? "s" : ""}</span>
                         <button className="icon-btn" onClick={e => startEdit(e, camp)} title="Edit campaign"><Pencil size={12}/></button>
+                        <button className="icon-btn danger-btn" onClick={e => deleteCampaign(e, camp)} title="Delete campaign"><Trash2 size={12}/></button>
                         <ChevronRight size={14} className={isOpen ? "rotated" : ""}/>
                       </div>
                     </>
@@ -1857,4 +1995,6 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
   );
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <ErrorBoundary><App /></ErrorBoundary>
+);

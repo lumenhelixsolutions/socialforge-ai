@@ -19,6 +19,8 @@ async function request(path, options = {}) {
 
 export const api = {
   diagnostics: () => request("/api/diagnostics"),
+  stats: () => request("/api/stats"),
+  auditLog: (limit = 50) => request(`/api/audit-log?limit=${limit}`),
   models: () => request("/api/models"),
   brands: () => request("/api/brands"),
   createBrand: (payload) => request("/api/brands", { method: "POST", body: JSON.stringify(payload) }),
@@ -28,12 +30,14 @@ export const api = {
   campaign: (id) => request(`/api/campaigns/${id}`),
   createCampaign: (payload) => request("/api/campaigns", { method: "POST", body: JSON.stringify(payload) }),
   updateCampaign: (id, payload) => request(`/api/campaigns/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteCampaign: (id) => request(`/api/campaigns/${id}`, { method: "DELETE" }),
   drafts: () => request("/api/drafts"),
   generateDrafts: (payload) => request("/api/drafts/generate", { method: "POST", body: JSON.stringify(payload) }),
   updateDraftStatus: (id, status) => request(`/api/drafts/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   promoteDraft: (id) => request(`/api/drafts/${id}/promote-safe`, { method: "POST" }),
   models: () => request("/api/models"),
   taskCards: () => request("/api/task-cards"),
+  duplicateTaskCard: (id) => request(`/api/task-cards/${id}/duplicate`, { method: "POST" }),
   deleteTaskCard: (id) => request(`/api/task-cards/${id}`, { method: "DELETE" }),
   taskCardMeta: () => request("/api/task-cards/meta"),
   taskCard: (id) => request(`/api/task-cards/${id}`),
