@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from app.db.database import get_conn, rows_to_dicts
-from app.models.schemas import DraftGenerateRequest
+from app.models.schemas import DraftGenerateRequest, TaskCardMove
+from app.services.brand_voice_service import brand_context, get_brand
 from app.services.draft_service import fallback_drafts, generate_drafts
+from app.services.ollama_client import OllamaClient
 from app.services.reviewer_service import review_content
 
 CARD_COLUMNS = ["inbox", "idea", "drafting", "needs_review", "needs_edit", "approved", "scheduled", "archived"]
@@ -289,7 +292,8 @@ def move_task_card(card_id: int, payload) -> dict[str, Any]:
         risk_score = card["risk_score"]
         reviewer_notes = card["reviewer_notes"]
         if payload.target_state == "needs_review":
-            review = review_content(card["preview"] or card["source_material"] or card["objective"], card["platform"])
+            brand = get_brand(card["brand_id"])
+            review = review_content(card["preview"] or card["source_material"] or card["objective"], card["platform"], brand)
             risk_score = review["score"]
             reviewer_notes = review["risk_notes"]
             approval_state = "reviewed"
@@ -315,7 +319,8 @@ async def run_card_action(card_id: int, payload) -> dict[str, Any]:
     card = get_task_card(card_id)
     if not card: raise ValueError("Task card not found.")
     if payload.action == "review":
-        review = review_content(card["preview"] or card["source_material"] or card["objective"], card["platform"])
+        brand = get_brand(card["brand_id"])
+        review = review_content(card["preview"] or card["source_material"] or card["objective"], card["platform"], brand)
         with get_conn() as conn:
             conn.execute(
                 "UPDATE task_cards SET workflow_state = ?, approval_state = ?, risk_score = ?, reviewer_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
@@ -332,7 +337,8 @@ async def run_card_action(card_id: int, payload) -> dict[str, Any]:
         )
         generated = await generate_drafts(req)
         preview = generated[0]["content"] if generated else fallback_drafts(card["title"], card["platform"], "", 1, card["model_lane"])[0]
-        review = review_content(preview, card["platform"])
+        brand = get_brand(card["brand_id"])
+        review = review_content(preview, card["platform"], brand)
         with get_conn() as conn:
             conn.execute(
                 """
@@ -383,10 +389,40 @@ async def run_card_action(card_id: int, payload) -> dict[str, Any]:
             conn.execute("UPDATE task_cards SET child_count = child_count + ? WHERE id = ?", (len(children), card_id))
             _audit(conn, card_id, "split_bulk", card["workflow_state"], "children_created")
         return {"parent": get_task_card(card_id), "children": children}
+    if payload.action == "polish":
+        preview = card["preview"] or card["source_material"] or ""
+        if not preview:
+            raise ValueError("No content to polish. Generate a draft first.")
+        brand = get_brand(card["brand_id"])
+        ollama = OllamaClient()
+        health = await ollama.health()
+        model = payload.model or os.getenv("SAFE_MODEL") or "qwen2.5:3b"
+        polished = preview
+        if health.get("ok"):
+            try:
+                prompt = (
+                    f"You are a social media content polisher.\n\n"
+                    f"{brand_context(brand)}\n\n"
+                    f"Platform: {card['platform']}\n"
+                    f"Original content: {preview}\n"
+                    f"Constraints: {card.get('constraints') or 'Clear, concise, platform-appropriate.'}\n\n"
+                    f"Instruction: Improve the original content while preserving its core message. "
+                    f"Make it more concise, engaging, and platform-appropriate. "
+                    f"Return only the polished version, no explanation."
+                )
+                polished = await ollama.generate(model, prompt)
+            except Exception:
+                pass
+        review = review_content(polished, card["platform"], brand)
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE task_cards SET preview = ?, risk_score = ?, reviewer_notes = ?, workflow_state = ?, approval_state = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (polished, review["score"], review["risk_notes"], "needs_review", "reviewed", card_id),
+            )
+            _audit(conn, card_id, "polished", card["workflow_state"], "needs_review")
+        return get_task_card(card_id)
     if payload.action == "archive":
-        class P: pass
-        p = P(); p.target_state = "archived"; p.scheduled_at = None; p.timezone = "America/New_York"
-        return move_task_card(card_id, p)
+        return move_task_card(card_id, TaskCardMove(target_state="archived"))
     raise ValueError(f"Unsupported card action: {payload.action}")
 
 
@@ -439,6 +475,29 @@ def update_task_card(card_id: int, payload) -> dict[str, Any]:
         _audit(conn, card_id, "updated_fields", before.get("workflow_state"), changed)
         updated = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()
         return dict(updated)
+
+def export_task_card(card_id: int) -> dict[str, Any]:
+    card = get_task_card(card_id)
+    if not card:
+        raise ValueError("Task card not found.")
+    return {
+        "export_version": "1",
+        "source_card_id": card_id,
+        "exported_fields": {
+            "title": card["title"],
+            "card_type": card["card_type"],
+            "objective": card["objective"],
+            "output_type": card["output_type"],
+            "platform": card["platform"],
+            "source_material": card["source_material"],
+            "ai_role": card["ai_role"],
+            "model_lane": card["model_lane"],
+            "constraints": card["constraints"],
+            "workflow_rule": card["workflow_rule"],
+            "execution_plan": card["execution_plan"],
+            "preview": card["preview"],
+        }
+    }
 
 def get_platform_preview(card_id: int) -> dict[str, Any]:
     card = get_task_card(card_id)

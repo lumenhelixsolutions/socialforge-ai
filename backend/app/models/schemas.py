@@ -8,6 +8,13 @@ class BrandCreate(BaseModel):
     forbidden_claims: str = ""
     preferred_words: str = ""
 
+class BrandUpdate(BaseModel):
+    name: Optional[str] = None
+    voice: Optional[str] = None
+    audience: Optional[str] = None
+    forbidden_claims: Optional[str] = None
+    preferred_words: Optional[str] = None
+
 class Brand(BrandCreate):
     id: int
 
@@ -29,6 +36,11 @@ class CampaignCreate(BaseModel):
     name: str
     goal: str = ""
     brand_id: Optional[int] = None
+
+class CampaignUpdate(BaseModel):
+    name: Optional[str] = None
+    goal: Optional[str] = None
+    status: Optional[str] = None
 
 class TaskCardCreate(BaseModel):
     title: str
@@ -59,6 +71,7 @@ class TaskCardAction(BaseModel):
 
 class TaskCardUpdate(BaseModel):
     title: Optional[str] = None
+    card_type: Optional[str] = None
     objective: Optional[str] = None
     output_type: Optional[str] = None
     platform: Optional[str] = None
