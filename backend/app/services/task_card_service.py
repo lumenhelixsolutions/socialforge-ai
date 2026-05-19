@@ -476,6 +476,29 @@ def update_task_card(card_id: int, payload) -> dict[str, Any]:
         updated = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()
         return dict(updated)
 
+def export_task_card(card_id: int) -> dict[str, Any]:
+    card = get_task_card(card_id)
+    if not card:
+        raise ValueError("Task card not found.")
+    return {
+        "export_version": "1",
+        "source_card_id": card_id,
+        "exported_fields": {
+            "title": card["title"],
+            "card_type": card["card_type"],
+            "objective": card["objective"],
+            "output_type": card["output_type"],
+            "platform": card["platform"],
+            "source_material": card["source_material"],
+            "ai_role": card["ai_role"],
+            "model_lane": card["model_lane"],
+            "constraints": card["constraints"],
+            "workflow_rule": card["workflow_rule"],
+            "execution_plan": card["execution_plan"],
+            "preview": card["preview"],
+        }
+    }
+
 def get_platform_preview(card_id: int) -> dict[str, Any]:
     card = get_task_card(card_id)
     if not card:

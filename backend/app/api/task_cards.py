@@ -7,6 +7,7 @@ from app.services.task_card_service import (
     PLATFORM_PREVIEW_RULES,
     analyze_preview_text,
     create_task_card,
+    export_task_card,
     explain_card,
     get_card_history,
     get_child_cards,
@@ -61,6 +62,13 @@ def update_card(card_id: int, payload: TaskCardUpdate):
         return update_task_card(card_id, payload)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+@router.get("/task-cards/{card_id}/export")
+def export_card(card_id: int):
+    try:
+        return export_task_card(card_id)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 @router.get("/task-cards/{card_id}/preview")
 def platform_preview(card_id: int):

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -37,13 +37,14 @@ import { api } from "./lib/api";
 import "./styles.css";
 
 const columns = [
-  ["inbox", "Inbox", "Capture rough work."],
-  ["idea", "Idea", "Define objective and setup."],
-  ["drafting", "Drafting", "AI creates or edits output."],
-  ["needs_review", "Needs Review", "Review risk and fit."],
-  ["approved", "Approved", "Ready to schedule."],
-  ["scheduled", "Scheduled", "Placed on calendar."],
-  ["archived", "Archived", "Preserved, inactive."],
+  ["inbox",       "Inbox",        "Capture rough work."],
+  ["idea",        "Idea",         "Define objective and setup."],
+  ["drafting",    "Drafting",     "AI creates or edits output."],
+  ["needs_review","Needs Review", "Review risk and fit."],
+  ["needs_edit",  "Needs Edit",   "Returned for revision."],
+  ["approved",    "Approved",     "Ready to schedule."],
+  ["scheduled",   "Scheduled",    "Placed on calendar."],
+  ["archived",    "Archived",     "Preserved, inactive."],
 ];
 
 const cardTypes = ["post", "image", "video", "campaign", "bulk", "review", "polish", "repurpose"];
@@ -373,8 +374,23 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
     execution_plan: "", preview: "",
   });
   const [message, setMessage] = useState("");
+  const [importJson, setImportJson] = useState("");
+  const [importError, setImportError] = useState("");
 
   function update(k, v) { setForm(prev => ({ ...prev, [k]: v })); }
+
+  function loadFromJson() {
+    setImportError("");
+    try {
+      const parsed = JSON.parse(importJson);
+      const fields = parsed.exported_fields || parsed;
+      setForm(prev => ({ ...prev, ...fields, brand_id: prev.brand_id }));
+      setImportJson("");
+      setImportError("Loaded — review the fields below, then create the card.");
+    } catch {
+      setImportError("Invalid JSON. Paste the full exported card JSON.");
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -468,6 +484,19 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
           <label>Initial preview <textarea value={form.preview} onChange={e => update("preview", e.target.value)} placeholder="Optional WYSIWYG-ish preview or draft text." /></label>
         </SetupStep>
 
+        <div className="import-json-panel">
+          <strong>Import from JSON</strong>
+          <p>Paste an exported card JSON to pre-fill the fields above.</p>
+          <textarea
+            value={importJson}
+            onChange={e => setImportJson(e.target.value)}
+            placeholder='{"exported_fields": {"title": "...", "platform": "x", ...}}'
+            style={{ minHeight: 80, fontFamily: "monospace", fontSize: 12 }}
+          />
+          <button type="button" onClick={loadFromJson} disabled={!importJson.trim()}>Load from JSON</button>
+          {importError && <p className={importError.startsWith("Loaded") ? "note" : "import-error"}>{importError}</p>}
+        </div>
+
         <button className="primary"><Plus size={16}/> Create Card</button>
         {message && <p className="note">{message}</p>}
       </form>
@@ -487,12 +516,23 @@ function SetupStep({ n, title, children }) {
 function EditablePreviewPanel({ card, platformPreviewRules, refresh, selectCard, setError }) {
   const [draft, setDraft] = useState(card.preview || card.source_material || "");
   const [saving, setSaving] = useState(false);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     setDraft(card.preview || card.source_material || "");
   }, [card.id, card.preview, card.source_material]);
 
+  const autoResize = useCallback((el) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.max(150, el.scrollHeight) + "px";
+  }, []);
+
+  useEffect(() => { autoResize(textareaRef.current); }, [draft, autoResize]);
+
   const analysis = analyzePreview(draft, card.platform, platformPreviewRules);
+  const fieldHints = platformPreviewRules?.[card.platform]?.fields || [];
+  const pct = Math.min(100, (analysis.chars / analysis.max) * 100);
 
   async function savePreview() {
     setSaving(true);
@@ -509,15 +549,32 @@ function EditablePreviewPanel({ card, platformPreviewRules, refresh, selectCard,
 
   return (
     <section className="inspector-section">
-      <h3>WYSIWYG-ish editor</h3>
-      <div className="preview-editor">
-        <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Write or edit the visible output for this card." />
-        <div className={`preview-stats ${analysis.over ? "over-limit" : ""}`}>
-          <strong>{analysis.label}</strong>
-          <span>{analysis.chars} / {analysis.max} characters</span>
-          <span>{analysis.over ? `${Math.abs(analysis.remaining)} over limit` : `${analysis.remaining} remaining`}</span>
+      <h3>Preview editor</h3>
+      {fieldHints.length > 0 && (
+        <div className="field-hints">
+          <span>Expected fields:</span>
+          {fieldHints.map(f => <span key={f} className="field-hint-chip">{f.replaceAll("_", " ")}</span>)}
         </div>
-        <button className="primary full" onClick={savePreview} disabled={saving}>{saving ? "Saving..." : "Save Preview"}</button>
+      )}
+      <div className="preview-editor">
+        <textarea
+          ref={textareaRef}
+          value={draft}
+          onChange={e => { setDraft(e.target.value); autoResize(e.target); }}
+          placeholder="Write or edit the visible output for this card."
+          style={{ overflow: "hidden", minHeight: 150, resize: "none" }}
+        />
+        <div className="char-bar-wrap">
+          <div className={`char-bar ${analysis.over ? "over" : pct > 85 ? "warn" : ""}`}>
+            <div className="char-bar-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <div className={`preview-stats ${analysis.over ? "over-limit" : ""}`}>
+            <strong>{analysis.label}</strong>
+            <span>{analysis.chars} / {analysis.max}</span>
+            <span>{analysis.over ? `${Math.abs(analysis.remaining)} over` : `${analysis.remaining} left`}</span>
+          </div>
+        </div>
+        <button className="primary full" onClick={savePreview} disabled={saving}>{saving ? "Saving…" : "Save Preview"}</button>
       </div>
       <PlatformPreviewCard card={card} text={draft} analysis={analysis} />
     </section>
@@ -593,6 +650,7 @@ function RiskBreakdown({ card }) {
 function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, selectCard, setError }) {
   const card = detail?.card || selectedCard;
   const [schedule, setSchedule] = useState("");
+  const [running, setRunning] = useState("");
 
   if (!card) {
     return (
@@ -613,6 +671,7 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, sel
       archive:     "Archive this card?",
     };
     if (!window.confirm(actionLabels[actionName] || `Run ${actionName}?`)) return;
+    setRunning(actionName);
     try {
       const result = await api.cardAction(card.id, actionName);
       if (result?.id) {
@@ -626,7 +685,21 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, sel
       }
     } catch (err) {
       setError(readableError(err));
+    } finally {
+      setRunning("");
     }
+  }
+
+  function exportCard() {
+    api.exportTaskCard(card.id).then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `card-${card.id}-${card.title.replace(/\s+/g, "-").toLowerCase()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }).catch(err => setError(readableError(err)));
   }
 
   async function move(target_state) {
@@ -706,15 +779,21 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, sel
       <section className="inspector-section">
         <h3>Actions</h3>
         <div className="action-grid">
-          <button onClick={() => action("generate")}><Sparkles size={14}/> Generate</button>
-          <button onClick={() => action("polish")}><Wand2 size={14}/> Polish</button>
-          <button onClick={() => action("review")}><ListChecks size={14}/> Review</button>
-          <button onClick={() => move("approved")}><CheckCircle size={14}/> Approve</button>
-          <button onClick={() => move("needs_edit")}><Pencil size={14}/> Send to Edit</button>
-          <button onClick={() => action("promote_raw")}><Flame size={14}/> Promote Raw</button>
-          <button onClick={() => action("split_bulk")}><Bot size={14}/> Split Bulk</button>
-          <button onClick={() => move("archived")}><Archive size={14}/> Archive</button>
+          <button onClick={() => action("generate")} disabled={!!running} className={running === "generate" ? "running" : ""}><Sparkles size={14}/> {running === "generate" ? "Generating…" : "Generate"}</button>
+          <button onClick={() => action("polish")}   disabled={!!running} className={running === "polish"   ? "running" : ""}><Wand2 size={14}/> {running === "polish"   ? "Polishing…" : "Polish"}</button>
+          <button onClick={() => action("review")}   disabled={!!running} className={running === "review"   ? "running" : ""}><ListChecks size={14}/> {running === "review"   ? "Reviewing…" : "Review"}</button>
+          <button onClick={() => move("approved")}   disabled={!!running}><CheckCircle size={14}/> Approve</button>
+          <button onClick={() => move("needs_edit")} disabled={!!running}><Pencil size={14}/> Send to Edit</button>
+          <button onClick={() => action("promote_raw")} disabled={!!running}><Flame size={14}/> Promote Raw</button>
+          <button onClick={() => action("split_bulk")}  disabled={!!running}><Bot size={14}/> Split Bulk</button>
+          <button onClick={() => move("archived")}   disabled={!!running}><Archive size={14}/> Archive</button>
         </div>
+      </section>
+
+      <section className="inspector-section">
+        <h3>Export</h3>
+        <button className="action-grid-full" onClick={exportCard}>↓ Export card as JSON</button>
+        <small>Downloads a JSON file you can re-import to create a new card.</small>
       </section>
 
       <section className="inspector-section">
