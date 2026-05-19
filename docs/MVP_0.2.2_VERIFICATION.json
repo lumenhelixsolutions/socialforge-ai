@@ -1,0 +1,22 @@
+{
+  "backend_compile": {
+    "exit": 0,
+    "output": "Spreadsheet runtime warmup failed during python startup\nTraceback (most recent call last):\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/patches/warm_spreadsheet_runtime_on_startup.py\", line 26, in warm_spreadsheet_runtime_on_startup\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 785, in warm_spreadsheet_runtime\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 720, in _warm_feature_flows\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 704, in _warm_collaboration_flows\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/generated/interface/models.py\", line 48821, in hydrate_crdt_from_proto\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/rpc/remote.py\", line 747, in __call__\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/rpc/client.py\", line 150, in call\nartifact_tool.rpc.client.RemoteError: hydrateCrdtFromProto requires an empty collaborative document.\n"
+  },
+  "backend_pytest": {
+    "exit": 0,
+    "output": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m9 passed\u001b[0m\u001b[32m in 1.28s\u001b[0m\u001b[0m\nSpreadsheet runtime warmup failed during python startup\nTraceback (most recent call last):\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/patches/warm_spreadsheet_runtime_on_startup.py\", line 26, in warm_spreadsheet_runtime_on_startup\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 785, in warm_spreadsheet_runtime\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 720, in _warm_feature_flows\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/spreadsheet_warmup.py\", line 704, in _warm_collaboration_flows\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/generated/interface/models.py\", line 48821, in hydrate_crdt_from_proto\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/rpc/remote.py\", line 747, in __call__\n  File \"/tmp/tmp.9eeVjt35CN/artifact_tool_v2-2.7.5/artifact_tool/rpc/client.py\", line 150, in call\nartifact_tool.rpc.client.RemoteError: hydrateCrdtFromProto requires an empty collaborative document.\n/opt/pyvenv/lib/python3.13/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option \"asyncio_default_fixture_loop_scope\" is unset.\nThe event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: \"function\", \"class\", \"module\", \"package\", \"session\"\n\n  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))\n"
+  },
+  "npm_install": {
+    "exit": 0,
+    "output": "\nadded 29 packages, and audited 30 packages in 4s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
+  },
+  "frontend_build": {
+    "exit": 0,
+    "output": "\n> local-social-agent-frontend@0.2.1 build\n> vite build\n\n\u001b[36mvite v8.0.13 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\n\u001b[2K\ntransforming...\u001b[32m\u2713\u001b[39m 1569 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[0m\u001b[32mindex.html                 \u001b[39m\u001b[2m\u001b[1m  0.39 kB\u001b[0m\u001b[0m\u001b[2m \u2502 gzip:  0.26 kB\u001b[0m\n\u001b[2mdist/\u001b[0m\u001b[2massets/\u001b[0m\u001b[35mindex-B-AFstOQ.css  \u001b[39m\u001b[2m\u001b[1m 10.07 kB\u001b[0m\u001b[0m\u001b[2m \u2502 gzip:  2.59 kB\u001b[0m\n\u001b[2mdist/\u001b[0m\u001b[2massets/\u001b[0m\u001b[36mindex-CpaI13Uk.js   \u001b[39m\u001b[2m\u001b[1m213.13 kB\u001b[0m\u001b[0m\u001b[2m \u2502 gzip: 68.49 kB\u001b[0m\n\n\u001b[32m\u2713 built in 655ms\u001b[39m\n"
+  },
+  "npm_audit": {
+    "exit": 0,
+    "output": "found 0 vulnerabilities\n"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "base_zip": "/mnt/data/socialforge-ai-github-stack-v0.3.1.zip",
+  "packaged_as": "/mnt/data/socialforge-ai-github-stack-clean-v0.3.1.zip",
+  "structure_ok": true,
+  "rewrite_process_terms_found": [],
+  "note": "Docs/positioning-only cleanup. Code was not changed from the previously verified package."
+}
