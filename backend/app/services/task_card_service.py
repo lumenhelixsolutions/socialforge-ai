@@ -190,23 +190,56 @@ def create_task_card(payload) -> dict[str, Any]:
             INSERT INTO task_cards (
                 title, card_type, objective, output_type, brand_id, campaign_id,
                 platform, source_material, ai_role, model_lane, constraints,
-                workflow_rule, execution_plan, preview, workflow_state,
+                workflow_rule, execution_plan, preview, tags, workflow_state,
                 approval_state, parent_card_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (title, payload.card_type, payload.objective, payload.output_type, payload.brand_id,
              payload.campaign_id, payload.platform, payload.source_material, payload.ai_role,
              payload.model_lane, payload.constraints, payload.workflow_rule, payload.execution_plan,
-             payload.preview, workflow_state, approval_state, payload.parent_card_id),
+             payload.preview, getattr(payload, "tags", "") or "", workflow_state, approval_state,
+             payload.parent_card_id),
         )
         card_id = cur.lastrowid
         _audit(conn, card_id, "created", None, workflow_state)
         row = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()
         return dict(row)
 
-def list_task_cards() -> list[dict[str, Any]]:
+def list_task_cards(
+    state: str | None = None,
+    platform: str | None = None,
+    lane: str | None = None,
+    campaign_id: int | None = None,
+    brand_id: int | None = None,
+    search: str | None = None,
+) -> list[dict[str, Any]]:
+    clauses: list[str] = []
+    params: list[Any] = []
+    if state:
+        clauses.append("workflow_state = ?")
+        params.append(state)
+    if platform:
+        clauses.append("platform = ?")
+        params.append(platform)
+    if lane:
+        clauses.append("model_lane = ?")
+        params.append(lane)
+    if campaign_id is not None:
+        clauses.append("campaign_id = ?")
+        params.append(campaign_id)
+    if brand_id is not None:
+        clauses.append("brand_id = ?")
+        params.append(brand_id)
+    if search:
+        clauses.append("(title LIKE ? OR objective LIKE ? OR preview LIKE ? OR tags LIKE ?)")
+        s = f"%{search}%"
+        params.extend([s, s, s, s])
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     with get_conn() as conn:
-        rows = conn.execute("SELECT * FROM task_cards ORDER BY updated_at DESC, created_at DESC").fetchall()
+        rows = conn.execute(
+            f"SELECT * FROM task_cards {where} ORDER BY updated_at DESC, created_at DESC",
+            params,
+        ).fetchall()
         return rows_to_dicts(rows)
 
 def get_task_card(card_id: int) -> dict[str, Any] | None:
@@ -444,7 +477,7 @@ def update_task_card(card_id: int, payload) -> dict[str, Any]:
     allowed = [
         "title", "card_type", "objective", "output_type", "platform",
         "source_material", "ai_role", "model_lane", "constraints",
-        "workflow_rule", "execution_plan", "preview"
+        "workflow_rule", "execution_plan", "preview", "tags"
     ]
     updates = {}
     for field in allowed:

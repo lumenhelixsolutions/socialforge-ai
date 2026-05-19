@@ -1522,3 +1522,86 @@ dt { color: #8b949e; } dd { margin: 0; }
   color: #8b949e;
   font-size: 11px;
 }
+
+/* ── Tag chips ─────────────────────────────────────────── */
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.tag-chip {
+  background: #161b22;
+  border: 1px solid #238636;
+  color: #3fb950;
+  border-radius: 12px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
+/* ── Loading spinner ───────────────────────────────────── */
+.app-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 200;
+  gap: 16px;
+  color: #8b949e;
+  font-size: 14px;
+}
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #30363d;
+  border-top-color: #58a6ff;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Sidebar nav badges ────────────────────────────────── */
+nav button { position: relative; }
+.nav-badge {
+  background: #da3633;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  margin-left: auto;
+}
+.nav-badge-ok {
+  background: #238636;
+}
+
+/* ── Keyboard hint strip ───────────────────────────────── */
+.kbd-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  padding: 10px 16px 12px;
+  font-size: 10px;
+  color: #484f58;
+  border-top: 1px solid #21262d;
+  margin-top: auto;
+}
+.kbd {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #8b949e;
+}

@@ -164,6 +164,7 @@ export function JobInspector({ detail, selectedCard, platformPreviewRules, brand
       execution_plan: card.execution_plan,
       source_material: card.source_material,
       workflow_rule: card.workflow_rule,
+      tags: card.tags || "",
     });
     setEditMode(true);
   }
@@ -423,6 +424,10 @@ export function JobInspector({ detail, selectedCard, platformPreviewRules, brand
 
           <label>Source material
             <textarea value={editForm.source_material} onChange={e => ue("source_material", e.target.value)} style={{ minHeight: 80 }} />
+          </label>
+
+          <label>Tags
+            <input value={editForm.tags} onChange={e => ue("tags", e.target.value)} placeholder="launch, q2, organic (comma separated)" />
           </label>
 
           <button className="primary" onClick={saveEdit} disabled={saving}>

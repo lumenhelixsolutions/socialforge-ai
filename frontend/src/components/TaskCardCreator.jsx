@@ -82,7 +82,7 @@ export function TaskCardCreator({ brands, campaigns, templates, refresh, selectC
     title: "", card_type: "post", objective: "", output_type: "post",
     brand_id: "", campaign_id: "", platform: "x", source_material: "", ai_role: "writer",
     model_lane: "safe", constraints: "", workflow_rule: "approval_required",
-    execution_plan: "", preview: "",
+    execution_plan: "", preview: "", tags: "",
   });
   const [message, setMessage] = useState("");
   const [importJson, setImportJson] = useState("");
@@ -210,6 +210,7 @@ export function TaskCardCreator({ brands, campaigns, templates, refresh, selectC
           <label>Source material <textarea value={form.source_material} onChange={e => update("source_material", e.target.value)} placeholder="Notes, transcript, brief, link summary, or seed idea." /></label>
           <label>Constraints <textarea value={form.constraints} onChange={e => update("constraints", e.target.value)} placeholder="Tone, length, claims to avoid, required phrases, CTA, safety limits." /></label>
           <label>Execution plan <textarea value={form.execution_plan} onChange={e => update("execution_plan", e.target.value)} placeholder="What steps should the AI perform?" /></label>
+          <label>Tags <input value={form.tags} onChange={e => update("tags", e.target.value)} placeholder="launch, q2, organic (comma separated)" /></label>
         </SetupStep>
 
         <SetupStep n="4" title="Preview">

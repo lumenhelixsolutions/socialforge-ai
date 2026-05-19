@@ -35,7 +35,11 @@ export const api = {
   generateDrafts: (payload) => request("/api/drafts/generate", { method: "POST", body: JSON.stringify(payload) }),
   updateDraftStatus: (id, status) => request(`/api/drafts/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   promoteDraft: (id) => request(`/api/drafts/${id}/promote-safe`, { method: "POST" }),
-  taskCards: () => request("/api/task-cards"),
+  taskCards: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ""));
+    const query = qs.toString() ? "?" + qs : "";
+    return request(`/api/task-cards${query}`);
+  },
   duplicateTaskCard: (id) => request(`/api/task-cards/${id}/duplicate`, { method: "POST" }),
   deleteTaskCard: (id) => request(`/api/task-cards/${id}`, { method: "DELETE" }),
   taskCardMeta: () => request("/api/task-cards/meta"),

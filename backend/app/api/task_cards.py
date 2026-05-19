@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Query
 from app.models.schemas import TaskCardCreate, TaskCardMove, TaskCardAction, TaskCardUpdate
 from app.services.task_card_service import (
     CARD_COLUMNS,
@@ -34,8 +35,18 @@ def task_card_meta():
     }
 
 @router.get("/task-cards")
-def task_cards():
-    return list_task_cards()
+def task_cards(
+    state: Optional[str] = Query(default=None),
+    platform: Optional[str] = Query(default=None),
+    lane: Optional[str] = Query(default=None),
+    campaign_id: Optional[int] = Query(default=None),
+    brand_id: Optional[int] = Query(default=None),
+    search: Optional[str] = Query(default=None),
+):
+    return list_task_cards(
+        state=state, platform=platform, lane=lane,
+        campaign_id=campaign_id, brand_id=brand_id, search=search,
+    )
 
 @router.post("/task-cards")
 def create_card(payload: TaskCardCreate):

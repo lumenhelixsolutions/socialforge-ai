@@ -16,6 +16,10 @@ DRAFT_COLUMN_MIGRATIONS = {
     "promoted_from_draft_id": "INTEGER",
 }
 
+TASK_CARD_COLUMN_MIGRATIONS = {
+    "tags": "TEXT NOT NULL DEFAULT ''",
+}
+
 def _ensure_column(conn, table: str, name: str, definition: str):
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     existing = {row[1] for row in rows}
@@ -29,6 +33,8 @@ def init_db():
         conn.executescript(schema_path.read_text(encoding="utf-8"))
         for column, definition in DRAFT_COLUMN_MIGRATIONS.items():
             _ensure_column(conn, "drafts", column, definition)
+        for column, definition in TASK_CARD_COLUMN_MIGRATIONS.items():
+            _ensure_column(conn, "task_cards", column, definition)
         conn.commit()
 
 @contextmanager

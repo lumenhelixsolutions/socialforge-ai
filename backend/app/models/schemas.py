@@ -57,6 +57,7 @@ class TaskCardCreate(BaseModel):
     workflow_rule: str = "approval_required"
     execution_plan: str = ""
     preview: str = ""
+    tags: str = ""
     parent_card_id: Optional[int] = None
 
 class TaskCardMove(BaseModel):
@@ -82,3 +83,4 @@ class TaskCardUpdate(BaseModel):
     workflow_rule: Optional[str] = None
     execution_plan: Optional[str] = None
     preview: Optional[str] = None
+    tags: Optional[str] = None

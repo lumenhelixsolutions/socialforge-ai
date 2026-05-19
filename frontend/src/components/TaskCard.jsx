@@ -19,6 +19,13 @@ export function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
         <span className={`risk-chip ${riskClass}`}>Risk {card.risk_score || "—"}</span>
         <span>{card.approval_state.replaceAll("_", " ")}</span>
       </div>
+      {card.tags && (
+        <div className="card-tags">
+          {card.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+            <span key={tag} className="tag-chip">{tag}</span>
+          ))}
+        </div>
+      )}
       {card.scheduled_at && <div className="scheduled"><Clock size={13}/> {card.scheduled_at}</div>}
     </article>
   );

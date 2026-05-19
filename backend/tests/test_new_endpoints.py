@@ -177,3 +177,69 @@ def test_task_card_update_card_type():
     updated = client.patch(f"/api/task-cards/{card['id']}", json={"card_type": "image"})
     assert updated.status_code == 200
     assert updated.json()["card_type"] == "image"
+
+
+# ── Tags ──────────────────────────────────────────────────────────────────────
+
+def test_task_card_tags_create_and_update():
+    card = client.post("/api/task-cards", json={
+        "title": uid("tagged_"),
+        "card_type": "post", "objective": "tag test",
+        "output_type": "post", "platform": "x",
+        "ai_role": "writer", "model_lane": "safe",
+        "tags": "launch, q2",
+    }).json()
+    assert card["tags"] == "launch, q2"
+
+    updated = client.patch(f"/api/task-cards/{card['id']}", json={"tags": "launch, q2, organic"})
+    assert updated.status_code == 200
+    assert updated.json()["tags"] == "launch, q2, organic"
+
+
+# ── Server-side filtering ─────────────────────────────────────────────────────
+
+def test_task_cards_filter_by_state():
+    # Move to drafting (valid from idea state)
+    card = client.post("/api/task-cards", json={
+        "title": uid("filter_state_"),
+        "card_type": "post", "objective": "filter test",
+        "output_type": "post", "platform": "x",
+        "ai_role": "writer", "model_lane": "safe",
+    }).json()
+    cid = card["id"]
+    client.patch(f"/api/task-cards/{cid}/move", json={"target_state": "drafting"})
+
+    res = client.get("/api/task-cards?state=drafting")
+    assert res.status_code == 200
+    ids = [c["id"] for c in res.json()]
+    assert cid in ids
+
+
+def test_task_cards_filter_by_platform():
+    card = client.post("/api/task-cards", json={
+        "title": uid("filter_plat_"),
+        "card_type": "post", "objective": "filter test",
+        "output_type": "post", "platform": "mastodon",
+        "ai_role": "writer", "model_lane": "safe",
+    }).json()
+
+    res = client.get("/api/task-cards?platform=mastodon")
+    assert res.status_code == 200
+    platforms = {c["platform"] for c in res.json()}
+    assert platforms == {"mastodon"}
+
+
+def test_task_cards_filter_by_search():
+    unique_title = uid("uniquesearch_")
+    client.post("/api/task-cards", json={
+        "title": unique_title,
+        "card_type": "post", "objective": "searchable obj",
+        "output_type": "post", "platform": "x",
+        "ai_role": "writer", "model_lane": "safe",
+    })
+
+    res = client.get(f"/api/task-cards?search={unique_title}")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data) == 1
+    assert data[0]["title"] == unique_title
