@@ -168,7 +168,7 @@ function App() {
           {error && <div className="error">Note: {error}</div>}
 
           {tab === "board" && (
-            <JobBoard cards={cards} selectedId={selectedId} selectCard={selectCard} refresh={refreshAll} setError={setError} />
+            <JobBoard cards={cards} selectedId={selectedId} selectCard={selectCard} refresh={refreshAll} setError={setError} addToast={addToast} />
           )}
           {tab === "create" && (
             <TaskCardCreator brands={brands} campaigns={campaigns} templates={templates} refresh={refreshAll} selectCard={selectCard} />

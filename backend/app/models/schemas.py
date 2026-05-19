@@ -72,15 +72,20 @@ class TaskCardAction(BaseModel):
 
 class TaskCardUpdate(BaseModel):
     title: Optional[str] = None
-    card_type: Optional[str] = None
+    card_type: Optional[str] = Field(default=None, pattern="^(campaign|bulk|post|image|video|review|polish|repurpose)$")
     objective: Optional[str] = None
     output_type: Optional[str] = None
-    platform: Optional[str] = None
+    platform: Optional[str] = Field(default=None, pattern="^(x|linkedin|instagram|mastodon|youtube|tiktok)$")
     source_material: Optional[str] = None
     ai_role: Optional[str] = None
-    model_lane: Optional[str] = None
+    model_lane: Optional[str] = Field(default=None, pattern="^(safe|raw|reviewer|polish|image|video)$")
     constraints: Optional[str] = None
-    workflow_rule: Optional[str] = None
+    workflow_rule: Optional[str] = Field(default=None, pattern="^(approval_required|auto_approve|review_only)$")
     execution_plan: Optional[str] = None
     preview: Optional[str] = None
     tags: Optional[str] = None
+
+
+class BulkMoveRequest(BaseModel):
+    ids: List[int] = Field(min_length=1, max_length=100)
+    target_state: str = Field(pattern="^(inbox|idea|drafting|needs_review|needs_edit|approved|scheduled|archived)$")

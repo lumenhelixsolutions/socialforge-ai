@@ -1,12 +1,13 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
-from app.models.schemas import TaskCardCreate, TaskCardMove, TaskCardAction, TaskCardUpdate
+from app.models.schemas import BulkMoveRequest, TaskCardCreate, TaskCardMove, TaskCardAction, TaskCardUpdate
 from app.services.task_card_service import (
     CARD_COLUMNS,
     CARD_SETUP_STEPS,
     CARD_TEMPLATES,
     PLATFORM_PREVIEW_RULES,
     analyze_preview_text,
+    bulk_move_task_cards,
     create_task_card,
     delete_task_card,
     duplicate_task_card,
@@ -47,6 +48,13 @@ def task_cards(
         state=state, platform=platform, lane=lane,
         campaign_id=campaign_id, brand_id=brand_id, search=search,
     )
+
+@router.post("/task-cards/bulk-move")
+def bulk_move(payload: BulkMoveRequest):
+    try:
+        return bulk_move_task_cards(payload)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @router.post("/task-cards")
 def create_card(payload: TaskCardCreate):

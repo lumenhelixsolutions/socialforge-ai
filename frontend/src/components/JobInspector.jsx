@@ -312,6 +312,16 @@ export function JobInspector({ detail, selectedCard, platformPreviewRules, brand
             </dl>
           </section>
 
+          {card.tags && (
+            <section className="inspector-section" style={{ paddingTop: 0 }}>
+              <div className="card-tags">
+                {card.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+                  <span key={tag} className="tag-chip">{tag}</span>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="inspector-section">
             <h3>AI task</h3>
             <p><strong>Objective:</strong> {card.objective || "No objective set."}</p>

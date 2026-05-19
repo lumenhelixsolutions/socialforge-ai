@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] — v0.3.4
+
+- **Bulk-select on board**: "Select" mode toggle in board header; checkbox on each card when active; floating bulk action bar with state picker and "Move selected" button; calls `POST /api/task-cards/bulk-move`
+- **`POST /api/task-cards/bulk-move`**: accepts `{ids: [...], target_state}`, returns `{moved, errors, moved_count}`; partial failures reported per-card without aborting the batch
+- **Tag filter on board**: when any cards have tags, a tag dropdown appears in the board filter bar; filters to cards containing that exact tag; tag text also searched in the query search
+- **Tags in inspector read view**: tag chips shown in Setup tab below card header badges (no edit required to see them)
+- **Campaign progress chips**: when a campaign is expanded, a row of coloured state chips shows how many cards are in each workflow state (approved=green, scheduled=blue, needs_review=yellow, needs_edit=red)
+- **Reviewer notes badge**: board task cards show a 📝 badge when `reviewer_notes` is set; hovering shows the notes content as tooltip
+- **Schema validation hardened**: `TaskCardUpdate.card_type`, `.platform`, `.model_lane`, `.workflow_rule` fields now carry Pydantic pattern validators matching the allowed values; invalid patches return 422
+- **Tests expanded to 30**: 4 new bulk-move tests covering full success, partial failure, invalid state (422), and empty ids (422)
+
 ## v0.3.3 — Stability, Observability, and Code Quality
 
 - **Frontend component split**: App.jsx (2000-line monolith) extracted into 9 focused component files under `src/components/`; shared utilities in `src/lib/utils.js`; constants in `src/lib/constants.js`; App.jsx reduced to ~120 lines of composition

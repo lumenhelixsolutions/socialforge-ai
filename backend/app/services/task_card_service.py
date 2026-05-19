@@ -242,6 +242,18 @@ def list_task_cards(
         ).fetchall()
         return rows_to_dicts(rows)
 
+def bulk_move_task_cards(payload) -> dict[str, Any]:
+    moved = []
+    errors = []
+    for card_id in payload.ids:
+        try:
+            move_payload = TaskCardMove(target_state=payload.target_state)
+            result = move_task_card(card_id, move_payload)
+            moved.append(result)
+        except Exception as exc:
+            errors.append({"id": card_id, "error": str(exc)})
+    return {"moved": moved, "errors": errors, "moved_count": len(moved)}
+
 def get_task_card(card_id: int) -> dict[str, Any] | None:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()

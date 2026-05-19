@@ -243,3 +243,56 @@ def test_task_cards_filter_by_search():
     data = res.json()
     assert len(data) == 1
     assert data[0]["title"] == unique_title
+
+
+# ── Bulk move ─────────────────────────────────────────────────────────────────
+
+def test_bulk_move_cards():
+    # Create two cards and bulk-move them both to drafting
+    ids = []
+    for i in range(2):
+        card = client.post("/api/task-cards", json={
+            "title": uid(f"bulk_{i}_"),
+            "card_type": "post", "objective": "bulk test",
+            "output_type": "post", "platform": "x",
+            "ai_role": "writer", "model_lane": "safe",
+        }).json()
+        ids.append(card["id"])
+
+    res = client.post("/api/task-cards/bulk-move", json={"ids": ids, "target_state": "drafting"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["moved_count"] == 2
+    assert data["errors"] == []
+    for moved_card in data["moved"]:
+        assert moved_card["workflow_state"] == "drafting"
+
+
+def test_bulk_move_partial_failure():
+    card = client.post("/api/task-cards", json={
+        "title": uid("bulk_partial_"),
+        "card_type": "post", "objective": "bulk partial test",
+        "output_type": "post", "platform": "x",
+        "ai_role": "writer", "model_lane": "safe",
+    }).json()
+
+    # Mix a valid id with a nonexistent one
+    res = client.post("/api/task-cards/bulk-move", json={
+        "ids": [card["id"], 999999],
+        "target_state": "drafting",
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["moved_count"] == 1
+    assert len(data["errors"]) == 1
+    assert data["errors"][0]["id"] == 999999
+
+
+def test_bulk_move_invalid_state():
+    res = client.post("/api/task-cards/bulk-move", json={"ids": [1], "target_state": "invalid_state"})
+    assert res.status_code == 422
+
+
+def test_bulk_move_empty_ids():
+    res = client.post("/api/task-cards/bulk-move", json={"ids": [], "target_state": "drafting"})
+    assert res.status_code == 422

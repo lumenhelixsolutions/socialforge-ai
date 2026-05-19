@@ -18,6 +18,7 @@ export function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
       <div className="task-meta">
         <span className={`risk-chip ${riskClass}`}>Risk {card.risk_score || "—"}</span>
         <span>{card.approval_state.replaceAll("_", " ")}</span>
+        {card.reviewer_notes && <span className="reviewer-notes-badge" title={card.reviewer_notes}>📝</span>}
       </div>
       {card.tags && (
         <div className="card-tags">

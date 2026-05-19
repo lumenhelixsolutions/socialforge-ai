@@ -1605,3 +1605,70 @@ nav button { position: relative; }
   font-family: monospace;
   color: #8b949e;
 }
+
+/* ── Bulk select ───────────────────────────────────────── */
+.bulk-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  color: #58a6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bulk-selected .task-card {
+  outline: 2px solid #58a6ff;
+  outline-offset: -2px;
+}
+.bulk-action-bar {
+  position: sticky;
+  bottom: 0;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  z-index: 10;
+  margin-top: 8px;
+}
+.bulk-count {
+  font-size: 13px;
+  color: #58a6ff;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* ── Campaign progress chips ───────────────────────────── */
+.campaign-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 4px;
+}
+.camp-state-chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #8b949e;
+}
+.camp-state-chip.camp-state-approved { border-color: #238636; color: #3fb950; }
+.camp-state-chip.camp-state-scheduled { border-color: #1f6feb; color: #58a6ff; }
+.camp-state-chip.camp-state-needs_review { border-color: #9e6a03; color: #d29922; }
+.camp-state-chip.camp-state-needs_edit { border-color: #da3633; color: #f85149; }
+
+/* ── Reviewer notes badge on card ─────────────────────── */
+.reviewer-notes-badge {
+  font-size: 11px;
+  cursor: help;
+}

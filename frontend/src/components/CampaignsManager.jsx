@@ -113,6 +113,20 @@ export function CampaignsManager({ campaigns, cards, brands, refresh, selectCard
 
                 {isOpen && !isEditing && (
                   <div className="campaign-card-body">
+                    {campCards.length > 0 && (
+                      <div className="campaign-progress">
+                        {["inbox","idea","drafting","needs_review","needs_edit","approved","scheduled","archived"]
+                          .map(state => {
+                            const count = campCards.filter(c => c.workflow_state === state).length;
+                            if (!count) return null;
+                            return (
+                              <span key={state} className={`camp-state-chip camp-state-${state}`}>
+                                {state.replaceAll("_", " ")} {count}
+                              </span>
+                            );
+                          })}
+                      </div>
+                    )}
                     {campCards.length === 0 && <p>No cards assigned to this campaign yet.</p>}
                     <div className="campaign-cards-grid">
                       {campCards.map(c => (

@@ -49,5 +49,6 @@ export const api = {
   cardAction: (id, action, model) => request(`/api/task-cards/${id}/action`, { method: "POST", body: JSON.stringify({ action, ...(model ? { model } : {}) }) }),
   updateTaskCard: (id, payload) => request(`/api/task-cards/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   taskCardPreview: (id) => request(`/api/task-cards/${id}/preview`),
-  exportTaskCard:  (id) => request(`/api/task-cards/${id}/export`)
+  exportTaskCard:  (id) => request(`/api/task-cards/${id}/export`),
+  bulkMoveCards: (payload) => request("/api/task-cards/bulk-move", { method: "POST", body: JSON.stringify(payload) }),
 };
