@@ -235,6 +235,10 @@ export function JobBoard({ cards, selectedId, selectCard, refresh, setError, add
       {bulkMode && (
         <div className="bulk-action-bar">
           <span className="bulk-count">{bulkIds.size} card{bulkIds.size !== 1 ? "s" : ""} selected</span>
+          <button onClick={() => setBulkIds(new Set(filteredCards.map(c => c.id)))} title="Select all visible cards">
+            All visible
+          </button>
+          <button onClick={() => setBulkIds(new Set())}>Clear</button>
           <select value={bulkTarget} onChange={e => setBulkTarget(e.target.value)}>
             {columns.filter(([id]) => id !== "archived").map(([id, label]) => (
               <option key={id} value={id}>{label}</option>
@@ -244,7 +248,6 @@ export function JobBoard({ cards, selectedId, selectCard, refresh, setError, add
           <button className="primary" onClick={applyBulk} disabled={bulkIds.size === 0 || bulkLoading}>
             {bulkLoading ? "Moving…" : "Move selected"}
           </button>
-          <button onClick={() => setBulkIds(new Set())}>Clear</button>
         </div>
       )}
     </section>

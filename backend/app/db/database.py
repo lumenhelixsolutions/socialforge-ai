@@ -18,6 +18,7 @@ DRAFT_COLUMN_MIGRATIONS = {
 
 TASK_CARD_COLUMN_MIGRATIONS = {
     "tags": "TEXT NOT NULL DEFAULT ''",
+    "pinned": "INTEGER NOT NULL DEFAULT 0",
 }
 
 def _ensure_column(conn, table: str, name: str, definition: str):

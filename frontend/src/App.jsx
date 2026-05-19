@@ -165,7 +165,12 @@ function App() {
 
       <main className="main split-main">
         <section className="workspace">
-          {error && <div className="error">Note: {error}</div>}
+          {error && (
+            <div className="error-banner">
+              <span>{error}</span>
+              <button className="error-dismiss" onClick={() => setError("")} aria-label="Dismiss">×</button>
+            </div>
+          )}
 
           {tab === "board" && (
             <JobBoard cards={cards} selectedId={selectedId} selectCard={selectCard} refresh={refreshAll} setError={setError} addToast={addToast} />

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Archive, Bot, CalendarDays, CheckCircle, ChevronRight, Flame,
-  ListChecks, Pencil, Plus, Sparkles, Trash2, Wand2,
+  ListChecks, Pencil, Pin, PinOff, Plus, Sparkles, Trash2, Wand2,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { readableError, guardedMove, getPlatformRule, analyzePreview } from "../lib/utils";
@@ -502,6 +502,25 @@ export function JobInspector({ detail, selectedCard, platformPreviewRules, brand
             <button className="action-grid-full" onClick={duplicateCard}>⊕ Duplicate card</button>
             <button className="action-grid-full" onClick={exportCard} style={{ marginTop: 6 }}>↓ Export card as JSON</button>
             <small>Duplicate creates an identical card in Idea/Drafting state. Export downloads JSON you can re-import.</small>
+          </section>
+
+          <section className="inspector-section">
+            <h3>Pin</h3>
+            <button
+              className="action-grid-full"
+              onClick={async () => {
+                try {
+                  await api.updateTaskCard(card.id, { pinned: card.pinned ? 0 : 1 });
+                  await refresh(card.id);
+                  await selectCard(card.id);
+                } catch (err) {
+                  setError(readableError(err));
+                }
+              }}
+            >
+              {card.pinned ? <><PinOff size={13}/> Unpin card</> : <><Pin size={13}/> Pin card</>}
+            </button>
+            <small>Pinned cards sort to the top of each board column.</small>
           </section>
 
           <section className="inspector-section">

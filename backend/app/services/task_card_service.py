@@ -237,7 +237,7 @@ def list_task_cards(
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     with get_conn() as conn:
         rows = conn.execute(
-            f"SELECT * FROM task_cards {where} ORDER BY updated_at DESC, created_at DESC",
+            f"SELECT * FROM task_cards {where} ORDER BY pinned DESC, updated_at DESC, created_at DESC",
             params,
         ).fetchall()
         return rows_to_dicts(rows)
@@ -489,7 +489,7 @@ def update_task_card(card_id: int, payload) -> dict[str, Any]:
     allowed = [
         "title", "card_type", "objective", "output_type", "platform",
         "source_material", "ai_role", "model_lane", "constraints",
-        "workflow_rule", "execution_plan", "preview", "tags"
+        "workflow_rule", "execution_plan", "preview", "tags", "pinned"
     ]
     updates = {}
     for field in allowed:

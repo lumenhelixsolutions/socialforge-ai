@@ -1,4 +1,4 @@
-import { Clock, Flame, GripVertical } from "lucide-react";
+import { Clock, Flame, GripVertical, Pin } from "lucide-react";
 
 export function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
   const riskClass = card.risk_score >= 80 ? "risk-low" : card.risk_score >= 60 ? "risk-med" : card.risk_score > 0 ? "risk-high" : "risk-none";
@@ -12,6 +12,7 @@ export function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
         <span className="badge">{card.card_type}</span>
         <span className="badge">{card.platform}</span>
         {card.model_lane === "raw" && <span className="badge raw"><Flame size={12}/> raw</span>}
+        {card.pinned ? <span className="pin-badge" title="Pinned"><Pin size={11}/></span> : null}
       </div>
       <h3>{card.title}</h3>
       <p>{card.preview || card.objective || "No preview yet. Open inspector to program this AI task."}</p>

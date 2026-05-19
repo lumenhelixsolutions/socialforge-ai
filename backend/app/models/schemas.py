@@ -84,6 +84,7 @@ class TaskCardUpdate(BaseModel):
     execution_plan: Optional[str] = None
     preview: Optional[str] = None
     tags: Optional[str] = None
+    pinned: Optional[int] = None
 
 
 class BulkMoveRequest(BaseModel):

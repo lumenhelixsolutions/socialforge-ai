@@ -68,6 +68,8 @@ frontend/src/
 - `approval_state`: `pending_review | under_review | approved | needs_edit`
 - `model_lane`: `safe | raw | reviewer | polish | image | video`
 - `card_type`: `post | image | video | campaign | bulk | review | polish | repurpose`
+- `tags`: comma-separated string, e.g. `"launch, q2, organic"`
+- `pinned`: `0 | 1` — pinned cards sort to the top of each board column
 
 **audit_events** — every meaningful state change is logged here with `entity_type`, `entity_id`, `action`, `before_state`, `after_state`.
 
@@ -78,7 +80,7 @@ cd backend
 python -m pytest tests/ -v
 ```
 
-22 tests across three files. Tests share a file-based test DB (`tests/test_local_social_agent.db`). Use `uuid.uuid4().hex[:8]` prefixes for any names to avoid collision on repeat runs.
+30 tests across three files. Tests share a file-based test DB (`tests/test_local_social_agent.db`). Use `uuid.uuid4().hex[:8]` prefixes for any names to avoid collision on repeat runs.
 
 ## Key patterns
 
@@ -93,6 +95,14 @@ python -m pytest tests/ -v
 **Backend service layer** — API routes stay thin; all logic lives in `app/services/`. Routes import from services, never from other routes.
 
 **DB access** — use `get_conn()` context manager; `rows_to_dicts()` to convert sqlite3.Row to plain dicts.
+
+**Column migrations** — add new optional columns to `TASK_CARD_COLUMN_MIGRATIONS` (or `DRAFT_COLUMN_MIGRATIONS`) in `database.py`; `init_db()` applies them via `_ensure_column()` on startup so existing DBs upgrade automatically.
+
+**Bulk move** — `POST /api/task-cards/bulk-move` accepts `{ids, target_state}`; partial failures reported per card without aborting the batch.
+
+**Server-side filtering** — `GET /api/task-cards` accepts `?state=&platform=&lane=&campaign_id=&brand_id=&search=` query params.
+
+**Keyboard shortcuts** — global handler in `App.jsx` ignores focus inside input/textarea/select; keys: `b`=board, `n`=new, `d`=drafts, `g`=brands, `c`=campaigns, `k`=calendar, `h`=health, `r`=refresh, `Esc`=deselect.
 
 ## Environment
 

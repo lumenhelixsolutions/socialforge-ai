@@ -2,6 +2,10 @@
 
 ## [Unreleased] — v0.3.4
 
+- **Pinned cards**: `pinned INTEGER` column on task_cards (auto-migrated); pin/unpin button in inspector Actions tab; pinned cards sort to top of each board column; pin indicator chip on card tile
+- **Bulk "Select all visible"**: in bulk-select mode, "All visible" button selects every card currently shown after filters are applied
+- **Dismissable error banner**: error div in main workspace now has an × button to clear it; styled with red border and close affordance
+- **`/api/stats` enhanced**: returns `cards_by_platform`, `cards_by_lane`, and `reviewed_cards` count in addition to `cards_by_state`
 - **Bulk-select on board**: "Select" mode toggle in board header; checkbox on each card when active; floating bulk action bar with state picker and "Move selected" button; calls `POST /api/task-cards/bulk-move`
 - **`POST /api/task-cards/bulk-move`**: accepts `{ids: [...], target_state}`, returns `{moved, errors, moved_count}`; partial failures reported per-card without aborting the batch
 - **Tag filter on board**: when any cards have tags, a tag dropdown appears in the board filter bar; filters to cards containing that exact tag; tag text also searched in the query search

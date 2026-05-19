@@ -1672,3 +1672,36 @@ nav button { position: relative; }
   font-size: 11px;
   cursor: help;
 }
+
+/* ── Pin badge on card ────────────────────────────────── */
+.pin-badge {
+  color: #d29922;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Dismissable error banner ─────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #2d1a1a;
+  border: 1px solid #da3633;
+  color: #f85149;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #f85149;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.error-dismiss:hover { color: #ff6b6b; }
