@@ -12,8 +12,10 @@ import {
   GripVertical,
   LayoutDashboard,
   ListChecks,
+  Pencil,
   Plus,
   Sparkles,
+  Tag,
   Wand2,
 } from "lucide-react";
 import {
@@ -49,69 +51,63 @@ const outputTypes = ["post", "thread", "caption", "image", "video_script", "caro
 const aiRoles = ["strategist", "writer", "designer", "reviewer", "scheduler", "editor", "repurposer", "polisher"];
 const modelLanes = ["safe", "raw", "reviewer", "polish", "image", "video"];
 
-const taskTemplates = [
-  {
-    id: "thought_leader_post",
-    label: "Thought Leader Post",
-    card_type: "post",
-    output_type: "post",
-    ai_role: "writer",
-    model_lane: "safe",
-    platform: "x",
-    constraints: "Clear, useful, confident. Avoid hype and unsupported claims.",
-    execution_plan: "Create 3 concise post variants, then select the clearest one."
-  },
-  {
-    id: "launch_week_bulk",
-    label: "Launch Week Bulk Plan",
-    card_type: "bulk",
-    output_type: "campaign",
-    ai_role: "strategist",
-    model_lane: "safe",
-    platform: "x",
-    constraints: "Distribute ideas across multiple days. Each child job requires review.",
-    execution_plan: "Create a one-week campaign plan and split it into child post jobs."
-  },
-  {
-    id: "raw_creative_sandbox",
-    label: "Raw Creative Sandbox",
-    card_type: "post",
-    output_type: "post",
-    ai_role: "writer",
-    model_lane: "raw",
-    platform: "x",
-    constraints: "Generate edgy creative angles only. Draft-only. Must be promoted before approval.",
-    execution_plan: "Generate raw variants for inspiration, then promote one to a safe reviewed card."
-  },
-  {
-    id: "image_prompt_job",
-    label: "Image Prompt Job",
-    card_type: "image",
-    output_type: "image",
-    ai_role: "designer",
-    model_lane: "image",
-    platform: "instagram",
-    constraints: "Create image prompt, alt text, and caption. Do not publish directly.",
-    execution_plan: "Generate one image concept, one prompt, one alt-text draft, and one caption."
-  },
-  {
-    id: "short_video_script",
-    label: "Short Video Script",
-    card_type: "video",
-    output_type: "video_script",
-    ai_role: "editor",
-    model_lane: "safe",
-    platform: "tiktok",
-    constraints: "Hook in first 2 seconds. Keep script under 45 seconds.",
-    execution_plan: "Create hook, scene beats, spoken script, caption, and visual notes."
-  }
+// Fallback templates used before meta loads
+const FALLBACK_TEMPLATES = [
+  { id: "thought_leader_post", label: "Thought Leader Post", card_type: "post", output_type: "post", ai_role: "writer", model_lane: "safe", platform: "x", constraints: "Clear, useful, confident. Avoid hype and unsupported claims.", execution_plan: "Create 3 concise post variants, then select the clearest one." },
+  { id: "launch_week_bulk", label: "Launch Week Bulk Plan", card_type: "bulk", output_type: "campaign", ai_role: "strategist", model_lane: "safe", platform: "x", constraints: "Distribute ideas across multiple days. Each child job requires review.", execution_plan: "Create a one-week campaign plan and split it into child post jobs." },
+  { id: "raw_creative_sandbox", label: "Raw Creative Sandbox", card_type: "post", output_type: "post", ai_role: "writer", model_lane: "raw", platform: "x", constraints: "Generate edgy creative angles only. Draft-only. Must be promoted before approval.", execution_plan: "Generate raw variants for inspiration, then promote one to a safe reviewed card." },
+  { id: "image_prompt_job", label: "Image Prompt Job", card_type: "image", output_type: "image", ai_role: "designer", model_lane: "image", platform: "instagram", constraints: "Create image prompt, alt text, and caption. Do not publish directly.", execution_plan: "Generate one image concept, one prompt, one alt-text draft, and one caption." },
+  { id: "short_video_script", label: "Short Video Script", card_type: "video", output_type: "video_script", ai_role: "editor", model_lane: "safe", platform: "tiktok", constraints: "Hook in first 2 seconds. Keep script under 45 seconds.", execution_plan: "Create hook, scene beats, spoken script, caption, and visual notes." },
 ];
+
+// Fallback platform rules used before meta loads
+const FALLBACK_PLATFORM_RULES = {
+  x:        { label: "X / Twitter",  max: 280,  note: "Compact post preview with character count and thread warning." },
+  linkedin:  { label: "LinkedIn",     max: 3000, note: "Professional long-form paragraph preview." },
+  instagram: { label: "Instagram",    max: 2200, note: "Caption, hashtags, media placeholder, and alt-text reminder." },
+  mastodon:  { label: "Mastodon",     max: 500,  note: "Content warning and instance-aware post preview." },
+  youtube:   { label: "YouTube",      max: 5000, note: "Title/description/shorts script preview." },
+  tiktok:    { label: "TikTok",       max: 2200, note: "Hook, visual beats, caption, and short video structure." },
+};
+
+function getPlatformRule(platform, metaRules) {
+  if (metaRules && metaRules[platform]) {
+    const r = metaRules[platform];
+    return { label: r.label, max: r.max_chars, note: r.wysiwyg_note };
+  }
+  return FALLBACK_PLATFORM_RULES[platform] || FALLBACK_PLATFORM_RULES.x;
+}
+
+function analyzePreview(text, platform, metaRules) {
+  const rule = getPlatformRule(platform, metaRules);
+  const value = text || "";
+  const hashtags = value.split(/\s+/).filter(x => x.startsWith("#") && x.length > 1);
+  const links = value.split(/\s+/).filter(x => x.startsWith("http://") || x.startsWith("https://"));
+  const paragraphs = value.split(/\n+/).filter(x => x.trim().length > 0);
+  const over = value.length > rule.max;
+  const threadParts = [];
+  if (platform === "x" && over) {
+    const words = value.split(/\s+/);
+    let current = "";
+    for (const word of words) {
+      if ((current + " " + word).trim().length > rule.max) {
+        if (current) threadParts.push(current);
+        current = word;
+      } else {
+        current = (current + " " + word).trim();
+      }
+    }
+    if (current) threadParts.push(current);
+  }
+  return { ...rule, chars: value.length, remaining: rule.max - value.length, over, hashtags, links, paragraphs, threadParts };
+}
 
 function App() {
   const [tab, setTab] = useState("board");
   const [diagnostics, setDiagnostics] = useState(null);
   const [brands, setBrands] = useState([]);
   const [cards, setCards] = useState([]);
+  const [meta, setMeta] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [error, setError] = useState("");
@@ -119,10 +115,16 @@ function App() {
   async function refreshAll(nextSelectedId = selectedId) {
     setError("");
     try {
-      const [d, b, tc] = await Promise.all([api.diagnostics(), api.brands(), api.taskCards()]);
+      const [d, b, tc, m] = await Promise.all([
+        api.diagnostics(),
+        api.brands(),
+        api.taskCards(),
+        api.taskCardMeta(),
+      ]);
       setDiagnostics(d);
       setBrands(b);
       setCards(tc);
+      setMeta(m);
       if (nextSelectedId) {
         const detail = await api.taskCard(nextSelectedId);
         setSelectedDetail(detail);
@@ -144,21 +146,24 @@ function App() {
   useEffect(() => { refreshAll(null); }, []);
 
   const selectedCard = selectedDetail?.card || cards.find(c => c.id === selectedId) || null;
+  const platformPreviewRules = meta?.platform_preview_rules || null;
+  const templates = meta?.templates || FALLBACK_TEMPLATES;
 
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="brandmark">
-          <div className="logo">LSA</div>
+          <div className="logo">SF</div>
           <div>
-            <strong>Local Social Agent</strong>
-            <span>MVP 0.2.2 WYSIWYG Preview</span>
+            <strong>SocialForge AI</strong>
+            <span>v0.3.2 local-first</span>
           </div>
         </div>
 
         <nav>
           <button className={tab === "board" ? "active" : ""} onClick={() => setTab("board")}><LayoutDashboard size={18}/> Job Board</button>
           <button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><Plus size={18}/> New Card</button>
+          <button className={tab === "brands" ? "active" : ""} onClick={() => setTab("brands")}><Tag size={18}/> Brands</button>
           <button className={tab === "calendar" ? "active" : ""} onClick={() => setTab("calendar")}><CalendarDays size={18}/> Calendar</button>
           <button className={tab === "health" ? "active" : ""} onClick={() => setTab("health")}><Activity size={18}/> Health</button>
         </nav>
@@ -184,7 +189,16 @@ function App() {
           )}
 
           {tab === "create" && (
-            <TaskCardCreator brands={brands} refresh={refreshAll} selectCard={selectCard} />
+            <TaskCardCreator
+              brands={brands}
+              templates={templates}
+              refresh={refreshAll}
+              selectCard={selectCard}
+            />
+          )}
+
+          {tab === "brands" && (
+            <BrandsManager brands={brands} refresh={refreshAll} setError={setError} />
           )}
 
           {tab === "calendar" && (
@@ -199,6 +213,7 @@ function App() {
         <JobInspector
           detail={selectedDetail}
           selectedCard={selectedCard}
+          platformPreviewRules={platformPreviewRules}
           refresh={refreshAll}
           selectCard={selectCard}
           setError={setError}
@@ -218,7 +233,7 @@ function readableError(err) {
 }
 
 async function guardedMove(card, targetState, refresh, selectCard, setError, options = {}) {
-  const message = transitionMessage(card, targetState, options);
+  const message = transitionMessage(card, targetState);
   if (!window.confirm(message)) return;
 
   try {
@@ -234,15 +249,18 @@ async function guardedMove(card, targetState, refresh, selectCard, setError, opt
   }
 }
 
-function transitionMessage(card, targetState, options = {}) {
+function transitionMessage(card, targetState) {
   if (targetState === "scheduled") {
-    return `Schedule "${card.title}"?\n\nThis creates a local scheduled job state. It will not publish to any platform in MVP 0.2.1.`;
+    return `Schedule "${card.title}"?\n\nThis creates a local scheduled job state. It does not publish to any platform.`;
   }
   if (targetState === "approved") {
-    return `Approve "${card.title}"?\n\nApproval means it can be scheduled later. Raw cards cannot be approved directly.`;
+    return `Approve "${card.title}"?\n\nApproval means it can be scheduled. Raw cards cannot be approved directly.`;
   }
   if (targetState === "archived") {
     return `Archive "${card.title}"?\n\nThe card remains in history but leaves the active workflow.`;
+  }
+  if (targetState === "needs_edit") {
+    return `Send "${card.title}" back to editing?`;
   }
   return `Move "${card.title}" to ${targetState.replaceAll("_", " ")}?`;
 }
@@ -267,11 +285,9 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
     if (!over) return;
     const card = cards.find(c => String(c.id) === String(active.id));
     if (!card) return;
-
     const targetState = String(over.id).replace("column-", "");
     if (!columns.some(([id]) => id === targetState)) return;
     if (targetState === card.workflow_state) return;
-
     await guardedMove(card, targetState, refresh, selectCard, setError);
   }
 
@@ -280,7 +296,7 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
       <header className="page-header">
         <div>
           <h1>Job Board</h1>
-          <p>Drag cards between states or use inspector/menu actions. Every meaningful move is confirmed.</p>
+          <p>Drag cards between states or use inspector actions. Every meaningful move is confirmed.</p>
         </div>
         <button className="primary" onClick={() => refresh()}><Activity size={16}/> Refresh</button>
       </header>
@@ -349,21 +365,12 @@ function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
   );
 }
 
-function TaskCardCreator({ brands, refresh, selectCard }) {
+function TaskCardCreator({ brands, templates, refresh, selectCard }) {
   const [form, setForm] = useState({
-    title: "",
-    card_type: "post",
-    objective: "",
-    output_type: "post",
-    brand_id: "",
-    platform: "x",
-    source_material: "",
-    ai_role: "writer",
-    model_lane: "safe",
-    constraints: "",
-    workflow_rule: "approval_required",
-    execution_plan: "",
-    preview: "",
+    title: "", card_type: "post", objective: "", output_type: "post",
+    brand_id: "", platform: "x", source_material: "", ai_role: "writer",
+    model_lane: "safe", constraints: "", workflow_rule: "approval_required",
+    execution_plan: "", preview: "",
   });
   const [message, setMessage] = useState("");
 
@@ -373,10 +380,7 @@ function TaskCardCreator({ brands, refresh, selectCard }) {
     e.preventDefault();
     setMessage("");
     try {
-      const card = await api.createTaskCard({
-        ...form,
-        brand_id: form.brand_id ? Number(form.brand_id) : null,
-      });
+      const card = await api.createTaskCard({ ...form, brand_id: form.brand_id ? Number(form.brand_id) : null });
       await refresh(card.id);
       await selectCard(card.id);
       setMessage("Visual AI task card created.");
@@ -398,11 +402,12 @@ function TaskCardCreator({ brands, refresh, selectCard }) {
         <div className="template-panel">
           <strong>Template presets</strong>
           <div className="template-chips">
-            {taskTemplates.map(t => (
+            {templates.map(t => (
               <button type="button" key={t.id} onClick={() => setForm(prev => ({ ...prev, ...t }))}>{t.label}</button>
             ))}
           </div>
         </div>
+
         <SetupStep n="1" title="Objective">
           <label>Card title <input value={form.title} onChange={e => update("title", e.target.value)} required placeholder="OIQ launch post" /></label>
           <label>Objective <textarea value={form.objective} onChange={e => update("objective", e.target.value)} placeholder="What should this AI job accomplish?" /></label>
@@ -479,60 +484,15 @@ function SetupStep({ n, title, children }) {
   );
 }
 
-
-function platformRules(platform) {
-  const rules = {
-    x: { label: "X", max: 280, note: "Compact post preview with character count and thread warning." },
-    linkedin: { label: "LinkedIn", max: 3000, note: "Professional long-form paragraph preview." },
-    instagram: { label: "Instagram", max: 2200, note: "Caption, hashtags, media placeholder, and alt-text reminder." },
-    mastodon: { label: "Mastodon", max: 500, note: "Content warning and instance-aware post preview." },
-    youtube: { label: "YouTube", max: 5000, note: "Title/description/shorts script preview." },
-    tiktok: { label: "TikTok", max: 2200, note: "Hook, visual beats, caption, and short video structure." },
-  };
-  return rules[platform] || rules.x;
-}
-
-function analyzePreview(text, platform) {
-  const rule = platformRules(platform);
-  const value = text || "";
-  const hashtags = value.split(/\s+/).filter(x => x.startsWith("#") && x.length > 1);
-  const links = value.split(/\s+/).filter(x => x.startsWith("http://") || x.startsWith("https://"));
-  const paragraphs = value.split(/\n+/).filter(x => x.trim().length > 0);
-  const over = value.length > rule.max;
-  const threadParts = [];
-  if (platform === "x" && over) {
-    const words = value.split(/\s+/);
-    let current = "";
-    for (const word of words) {
-      if ((current + " " + word).trim().length > rule.max) {
-        if (current) threadParts.push(current);
-        current = word;
-      } else {
-        current = (current + " " + word).trim();
-      }
-    }
-    if (current) threadParts.push(current);
-  }
-  return {
-    ...rule,
-    chars: value.length,
-    remaining: rule.max - value.length,
-    over,
-    hashtags,
-    links,
-    paragraphs,
-    threadParts,
-  };
-}
-
-function EditablePreviewPanel({ card, refresh, selectCard, setError }) {
+function EditablePreviewPanel({ card, platformPreviewRules, refresh, selectCard, setError }) {
   const [draft, setDraft] = useState(card.preview || card.source_material || "");
   const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     setDraft(card.preview || card.source_material || "");
   }, [card.id, card.preview, card.source_material]);
 
-  const analysis = analyzePreview(draft, card.platform);
+  const analysis = analyzePreview(draft, card.platform, platformPreviewRules);
 
   async function savePreview() {
     setSaving(true);
@@ -559,7 +519,6 @@ function EditablePreviewPanel({ card, refresh, selectCard, setError }) {
         </div>
         <button className="primary full" onClick={savePreview} disabled={saving}>{saving ? "Saving..." : "Save Preview"}</button>
       </div>
-
       <PlatformPreviewCard card={card} text={draft} analysis={analysis} />
     </section>
   );
@@ -579,7 +538,9 @@ function PlatformPreviewCard({ card, text, analysis }) {
       {card.platform === "mastodon" && <div className="content-warning-row">CW option: add content warning in future editor pass</div>}
 
       <div className="platform-body">
-        {text ? text.split("\\n").map((line, idx) => <p key={idx}>{line || " "}</p>) : <p>No preview yet.</p>}
+        {text
+          ? text.split("\n").map((line, idx) => <p key={idx}>{line || " "}</p>)
+          : <p>No preview yet.</p>}
       </div>
 
       {analysis.threadParts.length > 1 && (
@@ -601,8 +562,35 @@ function PlatformPreviewCard({ card, text, analysis }) {
   );
 }
 
+function RiskBreakdown({ card }) {
+  if (!card.risk_score) return null;
+  const scores = [
+    ["Clarity",     card.clarity_score],
+    ["Tone",        card.tone_score],
+    ["Platform",    card.platform_fit_score],
+    ["Claims",      card.claim_risk_score],
+    ["Legal",       card.legal_risk_score],
+    ["Spam",        card.spam_risk_score],
+    ["Brand match", card.brand_match_score],
+  ].filter(([, v]) => v != null && v !== 0);
 
-function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
+  if (scores.length === 0) return null;
+
+  return (
+    <section className="inspector-section">
+      <h3>Risk breakdown</h3>
+      <div className="score-grid">
+        {scores.map(([label, value]) => (
+          <span key={label} className={value >= 80 ? "score-ok" : value >= 60 ? "score-med" : "score-bad"}>
+            {label}: {value}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, selectCard, setError }) {
   const card = detail?.card || selectedCard;
   const [schedule, setSchedule] = useState("");
 
@@ -617,11 +605,12 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
 
   async function action(actionName) {
     const actionLabels = {
-      generate: "Generate output for this card?",
-      review: "Run reviewer on this card?",
+      generate:    "Generate output for this card?",
+      review:      "Run reviewer on this card?",
+      polish:      `Polish the current draft for ${card.platform}? The model will refine the existing content.`,
       promote_raw: "Promote this raw card into a safe child card?",
-      split_bulk: "Create child job cards from this bulk/campaign card?",
-      archive: "Archive this card?",
+      split_bulk:  "Create child job cards from this bulk/campaign card?",
+      archive:     "Archive this card?",
     };
     if (!window.confirm(actionLabels[actionName] || `Run ${actionName}?`)) return;
     try {
@@ -642,11 +631,7 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
 
   async function move(target_state) {
     await guardedMove(
-      card,
-      target_state,
-      refresh,
-      selectCard,
-      setError,
+      card, target_state, refresh, selectCard, setError,
       target_state === "scheduled" ? { scheduled_at: schedule || new Date(Date.now() + 86400000).toISOString() } : {}
     );
   }
@@ -675,6 +660,8 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
         </dl>
       </section>
 
+      <RiskBreakdown card={card} />
+
       <section className="inspector-section">
         <h3>AI task setup</h3>
         <p><strong>Objective:</strong> {card.objective || "No objective set."}</p>
@@ -683,7 +670,13 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
         <p><strong>Execution:</strong> {card.execution_plan || "No execution plan."}</p>
       </section>
 
-      <EditablePreviewPanel card={card} refresh={refresh} selectCard={selectCard} setError={setError} />
+      <EditablePreviewPanel
+        card={card}
+        platformPreviewRules={platformPreviewRules}
+        refresh={refresh}
+        selectCard={selectCard}
+        setError={setError}
+      />
 
       {card.reviewer_notes && (
         <section className="inspector-section">
@@ -714,9 +707,11 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
         <h3>Actions</h3>
         <div className="action-grid">
           <button onClick={() => action("generate")}><Sparkles size={14}/> Generate</button>
+          <button onClick={() => action("polish")}><Wand2 size={14}/> Polish</button>
           <button onClick={() => action("review")}><ListChecks size={14}/> Review</button>
           <button onClick={() => move("approved")}><CheckCircle size={14}/> Approve</button>
-          <button onClick={() => action("promote_raw")}><Wand2 size={14}/> Promote Raw</button>
+          <button onClick={() => move("needs_edit")}><Pencil size={14}/> Send to Edit</button>
+          <button onClick={() => action("promote_raw")}><Flame size={14}/> Promote Raw</button>
           <button onClick={() => action("split_bulk")}><Bot size={14}/> Split Bulk</button>
           <button onClick={() => move("archived")}><Archive size={14}/> Archive</button>
         </div>
@@ -744,6 +739,89 @@ function JobInspector({ detail, selectedCard, refresh, selectCard, setError }) {
   );
 }
 
+function BrandsManager({ brands, refresh, setError }) {
+  const empty = { name: "", voice: "", audience: "", forbidden_claims: "", preferred_words: "" };
+  const [form, setForm] = useState(empty);
+  const [message, setMessage] = useState("");
+
+  function update(k, v) { setForm(prev => ({ ...prev, [k]: v })); }
+
+  async function submit(e) {
+    e.preventDefault();
+    setMessage("");
+    try {
+      await api.createBrand(form);
+      await refresh();
+      setForm(empty);
+      setMessage("Brand profile created.");
+    } catch (err) {
+      setMessage(readableError(err));
+    }
+  }
+
+  return (
+    <section>
+      <header className="page-header">
+        <div>
+          <h1>Brand Profiles</h1>
+          <p>Brand profiles shape AI voice, tone, preferred vocabulary, and forbidden claims across all generated content.</p>
+        </div>
+      </header>
+
+      {brands.length > 0 && (
+        <div className="brand-list">
+          {brands.map(b => (
+            <div className="brand-card" key={b.id}>
+              <div className="brand-card-head">
+                <strong>{b.name}</strong>
+                <span className="badge">id {b.id}</span>
+              </div>
+              {b.voice && <p><span className="brand-label">Voice</span> {b.voice}</p>}
+              {b.audience && <p><span className="brand-label">Audience</span> {b.audience}</p>}
+              {b.preferred_words && <p><span className="brand-label">Preferred words</span> {b.preferred_words}</p>}
+              {b.forbidden_claims && <p><span className="brand-label">Forbidden claims</span> {b.forbidden_claims}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {brands.length === 0 && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <p>No brand profiles yet. Create one below to apply voice, audience, and safety rules to AI-generated content.</p>
+        </div>
+      )}
+
+      <form className="card form" onSubmit={submit}>
+        <h2><Tag size={18}/> New brand profile</h2>
+
+        <label>Brand name
+          <input value={form.name} onChange={e => update("name", e.target.value)} required placeholder="My Brand" />
+        </label>
+
+        <div className="grid two">
+          <label>Voice / tone
+            <textarea value={form.voice} onChange={e => update("voice", e.target.value)} placeholder="Conversational, expert, direct. No hype." style={{ minHeight: 80 }} />
+          </label>
+          <label>Target audience
+            <textarea value={form.audience} onChange={e => update("audience", e.target.value)} placeholder="Indie developers, solo creators, small teams." style={{ minHeight: 80 }} />
+          </label>
+        </div>
+
+        <label>Preferred words
+          <input value={form.preferred_words} onChange={e => update("preferred_words", e.target.value)} placeholder="local, useful, clear, simple (comma or space separated)" />
+        </label>
+
+        <label>Forbidden claims
+          <input value={form.forbidden_claims} onChange={e => update("forbidden_claims", e.target.value)} placeholder="guaranteed, best, #1 (comma separated — these lower brand match score)" />
+        </label>
+
+        <button className="primary"><Plus size={16}/> Create Brand</button>
+        {message && <p className="note">{message}</p>}
+      </form>
+    </section>
+  );
+}
+
 function CalendarSurface({ cards, refresh, selectCard, setError }) {
   const approved = cards.filter(c => c.workflow_state === "approved");
   const scheduled = cards.filter(c => c.workflow_state === "scheduled");
@@ -758,7 +836,7 @@ function CalendarSurface({ cards, refresh, selectCard, setError }) {
       <header className="page-header">
         <div>
           <h1>Calendar Scheduler</h1>
-          <p>Click a day slot to schedule approved cards. Drag/drop calendar integration comes after this surface feels right.</p>
+          <p>Click a day slot to schedule approved cards. Publishing is not enabled — this is local scheduling only.</p>
         </div>
       </header>
 
@@ -779,7 +857,7 @@ function CalendarSurface({ cards, refresh, selectCard, setError }) {
               <div className="calendar-slot">
                 {approved.slice(0, 3).map(card => (
                   <button key={card.id} onClick={() => scheduleOnDay(card, day)}>
-                    Schedule “{card.title}” at 2 PM
+                    Schedule "{card.title}" at 2 PM
                   </button>
                 ))}
                 {scheduled.filter(c => (c.scheduled_at || "").startsWith(day.iso)).map(card => (
@@ -811,7 +889,7 @@ function Health({ diagnostics, refresh }) {
       <header className="page-header">
         <div>
           <h1>System Health</h1>
-          <p>The app should fail soft and keep local fallback drafting available.</p>
+          <p>The app fails soft and keeps local fallback drafting available when Ollama is offline.</p>
         </div>
         <button className="primary" onClick={() => refresh()}><Activity size={16}/> Run Diagnostics</button>
       </header>

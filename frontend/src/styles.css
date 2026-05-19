@@ -613,3 +613,44 @@ dt { color: #8b949e; } dd { margin: 0; }
   color: #8b949e;
   font-size: 12px;
 }
+
+/* Brand profiles */
+.brand-list {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.brand-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.brand-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.brand-card p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #c9d1d9;
+  display: flex;
+  gap: 8px;
+}
+
+.brand-label {
+  color: #8b949e;
+  font-size: 12px;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+/* Risk score breakdown */
+.score-ok  { color: #7ee787; border-color: #238636 !important; }
+.score-med { color: #f2cc60; border-color: #8a6d1d !important; }
+.score-bad { color: #ff7b72; border-color: #8a3030 !important; }
