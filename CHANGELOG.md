@@ -2,6 +2,9 @@
 
 ## [Unreleased] — v0.3.3
 
+- **Inspector card editing**: Setup tab now has an Edit button; opens inline form for title, card_type, output_type, platform, ai_role, model_lane, workflow_rule, objective, constraints, execution_plan, source_material; saves via PATCH; source_material shown as collapsible details in read-only view
+- **Draft → Task Card**: DraftCard "→ Create Task Card" button creates a task card directly from draft content (content→preview+source_material, topic→title, platform/brand preserved), then navigates to the new card on the board
+- **Job board search/filter**: filter bar above board with text search (title/objective/preview), platform dropdown, and lane dropdown; Clear button when any filter is active; column headers show card count badge
 - **Brand editing and deletion**: inline edit form per brand card; delete with confirmation (nulls brand_id on linked task cards); `PATCH /api/brands/{id}` and `DELETE /api/brands/{id}` endpoints
 - **Calendar overhaul**: fixed major bug where all approved cards appeared as scheduling buttons on every day; new layout with "Ready to schedule" queue on left, 7-day grid on right, per-day slot picker with time selection, unschedule (return to Approved) per scheduled card
 - **Drafts Studio**: new Drafts tab with topic-brief form (platform, lane, brand, goal, tone, count), AI generation via `/api/drafts/generate`, expandable draft cards with score breakdown per sub-dimension, status management, raw→safe promotion

@@ -71,6 +71,7 @@ class TaskCardAction(BaseModel):
 
 class TaskCardUpdate(BaseModel):
     title: Optional[str] = None
+    card_type: Optional[str] = None
     objective: Optional[str] = None
     output_type: Optional[str] = None
     platform: Optional[str] = None

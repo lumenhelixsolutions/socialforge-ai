@@ -16,6 +16,7 @@ import {
   ListChecks,
   Pencil,
   Plus,
+  Search,
   Sparkles,
   Tag,
   Trash2,
@@ -209,7 +210,14 @@ function App() {
           )}
 
           {tab === "drafts" && (
-            <DraftsStudio brands={brands} />
+            <DraftsStudio
+              brands={brands}
+              onCardCreated={async (card) => {
+                await refreshAll(card.id);
+                selectCard(card.id);
+                setTab("board");
+              }}
+            />
           )}
 
           {tab === "brands" && (
@@ -294,19 +302,40 @@ function transitionMessage(card, targetState) {
 }
 
 function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
+  const [query, setQuery] = useState("");
+  const [filterPlatform, setFilterPlatform] = useState("");
+  const [filterLane, setFilterLane] = useState("");
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor)
   );
 
+  const filteredCards = useMemo(() => {
+    let out = cards;
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      out = out.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        (c.objective || "").toLowerCase().includes(q) ||
+        (c.preview || "").toLowerCase().includes(q)
+      );
+    }
+    if (filterPlatform) out = out.filter(c => c.platform === filterPlatform);
+    if (filterLane)     out = out.filter(c => c.model_lane === filterLane);
+    return out;
+  }, [cards, query, filterPlatform, filterLane]);
+
   const grouped = useMemo(() => {
     const result = Object.fromEntries(columns.map(([id]) => [id, []]));
-    for (const card of cards) {
+    for (const card of filteredCards) {
       const key = result[card.workflow_state] ? card.workflow_state : "idea";
       result[key].push(card);
     }
     return result;
-  }, [cards]);
+  }, [filteredCards]);
+
+  const isFiltered = query || filterPlatform || filterLane;
 
   async function onDragEnd(event) {
     const { active, over } = event;
@@ -323,11 +352,44 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
     <section>
       <header className="page-header">
         <div>
-          <h1>Job Board</h1>
+          <h1>Job Board <span className="muted" style={{ fontSize: 14, fontWeight: 400 }}>({cards.length} card{cards.length !== 1 ? "s" : ""})</span></h1>
           <p>Drag cards between states or use inspector actions. Every meaningful move is confirmed.</p>
         </div>
         <button className="primary" onClick={() => refresh()}><Activity size={16}/> Refresh</button>
       </header>
+
+      <div className="board-filter-bar">
+        <div className="board-search">
+          <Search size={14}/>
+          <input
+            type="search"
+            placeholder="Search cards…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+        </div>
+        <select value={filterPlatform} onChange={e => setFilterPlatform(e.target.value)}>
+          <option value="">All platforms</option>
+          <option value="x">X</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="instagram">Instagram</option>
+          <option value="mastodon">Mastodon</option>
+          <option value="youtube">YouTube</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+        <select value={filterLane} onChange={e => setFilterLane(e.target.value)}>
+          <option value="">All lanes</option>
+          <option value="safe">Safe</option>
+          <option value="raw">Raw</option>
+          <option value="reviewer">Reviewer</option>
+          <option value="polish">Polish</option>
+        </select>
+        {isFiltered && (
+          <button className="filter-clear-btn" onClick={() => { setQuery(""); setFilterPlatform(""); setFilterLane(""); }}>
+            <X size={13}/> Clear
+          </button>
+        )}
+      </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <div className="board">
@@ -345,7 +407,10 @@ function BoardColumn({ id, label, rule, cards, selectedId, selectCard }) {
   return (
     <div className={`board-column ${isOver ? "over" : ""}`} ref={setNodeRef}>
       <div className="column-header">
-        <strong>{label}</strong>
+        <div className="column-header-top">
+          <strong>{label}</strong>
+          {cards.length > 0 && <span className="column-count">{cards.length}</span>}
+        </div>
         <span>{rule}</span>
       </div>
       <SortableContext items={cards.map(c => String(c.id))} strategy={verticalListSortingStrategy}>
@@ -700,6 +765,42 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
   const [schedule, setSchedule] = useState("");
   const [running, setRunning] = useState("");
   const [itab, setItab] = useState("setup");
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setEditForm({
+      title: card.title,
+      card_type: card.card_type,
+      objective: card.objective,
+      output_type: card.output_type,
+      platform: card.platform,
+      ai_role: card.ai_role,
+      model_lane: card.model_lane,
+      constraints: card.constraints,
+      execution_plan: card.execution_plan,
+      source_material: card.source_material,
+      workflow_rule: card.workflow_rule,
+    });
+    setEditMode(true);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      await api.updateTaskCard(card.id, editForm);
+      await refresh(card.id);
+      await selectCard(card.id);
+      setEditMode(false);
+    } catch (err) {
+      setError(readableError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function ue(k, v) { setEditForm(prev => ({ ...prev, [k]: v })); }
 
   if (!card) {
     return (
@@ -788,10 +889,13 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
         ))}
       </div>
 
-      {itab === "setup" && (
+      {itab === "setup" && !editMode && (
         <>
           <section className="inspector-section">
-            <h3>Card</h3>
+            <div className="section-head-row">
+              <h3>Card</h3>
+              <button className="icon-btn" onClick={startEdit} title="Edit card fields"><Pencil size={13}/> Edit</button>
+            </div>
             <dl>
               <dt>Type</dt><dd>{card.card_type} / {card.output_type}</dd>
               <dt>Platform</dt><dd>{card.platform}</dd>
@@ -805,9 +909,15 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
           <section className="inspector-section">
             <h3>AI task</h3>
             <p><strong>Objective:</strong> {card.objective || "No objective set."}</p>
-            <p><strong>Role:</strong> {card.ai_role}</p>
+            <p><strong>Role:</strong> {card.ai_role} · {card.model_lane}</p>
             {card.constraints && <p><strong>Constraints:</strong> {card.constraints}</p>}
             {card.execution_plan && <p><strong>Execution:</strong> {card.execution_plan}</p>}
+            {card.source_material && (
+              <details className="source-material-details">
+                <summary>Source material</summary>
+                <p>{card.source_material}</p>
+              </details>
+            )}
           </section>
 
           {card.reviewer_notes && (
@@ -835,6 +945,85 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
             </section>
           )}
         </>
+      )}
+
+      {itab === "setup" && editMode && (
+        <div className="inspector-edit-form">
+          <div className="inspector-edit-head">
+            <strong>Edit card fields</strong>
+            <button className="icon-btn" onClick={() => setEditMode(false)}>Cancel</button>
+          </div>
+
+          <label>Title
+            <input value={editForm.title} onChange={e => ue("title", e.target.value)} />
+          </label>
+
+          <div className="grid two">
+            <label>Card type
+              <select value={editForm.card_type} onChange={e => ue("card_type", e.target.value)}>
+                {cardTypes.map(x => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+            <label>Output type
+              <select value={editForm.output_type} onChange={e => ue("output_type", e.target.value)}>
+                {outputTypes.map(x => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid two">
+            <label>Platform
+              <select value={editForm.platform} onChange={e => ue("platform", e.target.value)}>
+                <option value="x">X</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="instagram">Instagram</option>
+                <option value="mastodon">Mastodon</option>
+                <option value="youtube">YouTube</option>
+                <option value="tiktok">TikTok</option>
+              </select>
+            </label>
+            <label>AI role
+              <select value={editForm.ai_role} onChange={e => ue("ai_role", e.target.value)}>
+                {aiRoles.map(x => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid two">
+            <label>Model lane
+              <select value={editForm.model_lane} onChange={e => ue("model_lane", e.target.value)}>
+                {modelLanes.map(x => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+            <label>Workflow rule
+              <select value={editForm.workflow_rule} onChange={e => ue("workflow_rule", e.target.value)}>
+                <option value="approval_required">Approval required</option>
+                <option value="auto_approve">Auto approve</option>
+                <option value="review_only">Review only</option>
+              </select>
+            </label>
+          </div>
+
+          <label>Objective
+            <textarea value={editForm.objective} onChange={e => ue("objective", e.target.value)} style={{ minHeight: 70 }} />
+          </label>
+
+          <label>Constraints
+            <textarea value={editForm.constraints} onChange={e => ue("constraints", e.target.value)} style={{ minHeight: 70 }} />
+          </label>
+
+          <label>Execution plan
+            <textarea value={editForm.execution_plan} onChange={e => ue("execution_plan", e.target.value)} style={{ minHeight: 70 }} />
+          </label>
+
+          <label>Source material
+            <textarea value={editForm.source_material} onChange={e => ue("source_material", e.target.value)} style={{ minHeight: 80 }} />
+          </label>
+
+          <button className="primary" onClick={saveEdit} disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </div>
       )}
 
       {itab === "preview" && (
@@ -1175,7 +1364,7 @@ function Health({ diagnostics, refresh }) {
   );
 }
 
-function DraftsStudio({ brands }) {
+function DraftsStudio({ brands, onCardCreated }) {
   const emptyForm = {
     topic: "", platform: "x", lane: "safe", brand_id: "",
     goal: "engagement", tone: "clear, useful, human", count: 5,
@@ -1303,7 +1492,7 @@ function DraftsStudio({ brands }) {
             {archivedCount > 0 && <span className="muted">{archivedCount} archived</span>}
           </div>
           {activeDrafts.map(draft => (
-            <DraftCard key={draft.id} draft={draft} onStatus={updateStatus} onPromote={promote} />
+            <DraftCard key={draft.id} draft={draft} onStatus={updateStatus} onPromote={promote} onCreateCard={onCardCreated} />
           ))}
         </div>
       )}
@@ -1317,8 +1506,9 @@ function DraftsStudio({ brands }) {
   );
 }
 
-function DraftCard({ draft, onStatus, onPromote }) {
+function DraftCard({ draft, onStatus, onPromote, onCreateCard }) {
   const [expanded, setExpanded] = useState(false);
+  const [creating, setCreating] = useState(false);
   const scoreClass = draft.score >= 80 ? "score-ok" : draft.score >= 60 ? "score-med" : "score-bad";
   const scores = [
     ["Clarity", draft.clarity_score], ["Tone", draft.tone_score],
@@ -1326,6 +1516,33 @@ function DraftCard({ draft, onStatus, onPromote }) {
     ["Legal", draft.legal_risk_score], ["Spam", draft.spam_risk_score],
     ["Brand", draft.brand_match_score],
   ].filter(([, v]) => v > 0);
+
+  async function createTaskCard() {
+    if (!window.confirm(`Create a task card from this draft? The draft will stay in the Drafts Studio.`)) return;
+    setCreating(true);
+    try {
+      const card = await api.createTaskCard({
+        title: draft.topic ? draft.topic.slice(0, 80) : `Draft ${draft.id}`,
+        card_type: "post",
+        objective: draft.topic || "",
+        output_type: "post",
+        brand_id: draft.brand_id || null,
+        platform: draft.platform,
+        source_material: draft.content,
+        preview: draft.content,
+        ai_role: "writer",
+        model_lane: draft.raw_sandbox ? "raw" : "safe",
+        constraints: draft.hashtags ? `Hashtags: ${draft.hashtags}` : "",
+        workflow_rule: "approval_required",
+        execution_plan: "",
+      });
+      if (onCreateCard) await onCreateCard(card);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <div className={`draft-card ${draft.raw_sandbox ? "raw" : ""} status-${draft.status}`}>
@@ -1375,6 +1592,9 @@ function DraftCard({ draft, onStatus, onPromote }) {
               <Flame size={13}/> Promote to Safe Draft
             </button>
           )}
+          <button className="draft-to-card-btn" onClick={createTaskCard} disabled={creating}>
+            <Plus size={13}/> {creating ? "Creating…" : "→ Create Task Card"}
+          </button>
         </div>
       )}
 
