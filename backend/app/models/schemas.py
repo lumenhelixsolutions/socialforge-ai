@@ -8,6 +8,13 @@ class BrandCreate(BaseModel):
     forbidden_claims: str = ""
     preferred_words: str = ""
 
+class BrandUpdate(BaseModel):
+    name: Optional[str] = None
+    voice: Optional[str] = None
+    audience: Optional[str] = None
+    forbidden_claims: Optional[str] = None
+    preferred_words: Optional[str] = None
+
 class Brand(BrandCreate):
     id: int
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — v0.3.3
+
+- **Brand editing and deletion**: inline edit form per brand card; delete with confirmation (nulls brand_id on linked task cards); `PATCH /api/brands/{id}` and `DELETE /api/brands/{id}` endpoints
+- **Calendar overhaul**: fixed major bug where all approved cards appeared as scheduling buttons on every day; new layout with "Ready to schedule" queue on left, 7-day grid on right, per-day slot picker with time selection, unschedule (return to Approved) per scheduled card
+- **Drafts Studio**: new Drafts tab with topic-brief form (platform, lane, brand, goal, tone, count), AI generation via `/api/drafts/generate`, expandable draft cards with score breakdown per sub-dimension, status management, raw→safe promotion
+
 ## v0.3.2 — Quality + Polish Foundation
 
 - **Campaigns Management UI**: new Campaigns tab (FolderKanban icon) with list of campaigns, expandable per-campaign card view, open/close status toggle, and create form; campaign dropdown added to New Card step 2

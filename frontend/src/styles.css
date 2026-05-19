@@ -904,3 +904,289 @@ dt { color: #8b949e; } dd { margin: 0; }
 .campaign-actions button:hover { border-color: #8b949e; }
 
 .rotated { transform: rotate(90deg); transition: transform .15s; }
+
+/* Utility */
+.muted { color: #8b949e; font-size: 13px; }
+
+/* Brand edit/delete */
+.brand-card-controls {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.brand-card-controls button {
+  background: none;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #8b949e;
+  padding: 4px 7px;
+  cursor: pointer;
+  line-height: 1;
+}
+.brand-card-controls button:hover { border-color: #8b949e; color: #e6edf3; }
+.danger-btn:hover { border-color: #ff7b72 !important; color: #ff7b72 !important; }
+
+.brand-edit-form {
+  display: grid;
+  gap: 10px;
+}
+.brand-edit-form label { display: grid; gap: 4px; font-size: 13px; color: #8b949e; }
+.brand-edit-form input, .brand-edit-form textarea {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #e6edf3;
+  font-size: 13px;
+}
+.brand-edit-actions { display: flex; gap: 8px; }
+.brand-edit-actions button {
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  background: #161b22;
+  color: #c9d1d9;
+}
+.brand-edit-actions button:hover { border-color: #8b949e; }
+
+/* Calendar overhaul */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .calendar-layout { grid-template-columns: 1fr; }
+}
+
+.calendar-queue {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.calendar-queue h2 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+
+.queue-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+.queue-card:hover { border-color: #58a6ff; }
+.queue-card-top { display: flex; gap: 6px; }
+.queue-card strong { font-size: 13px; }
+.queue-card p { margin: 0; font-size: 12px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.calendar-week {
+  display: grid;
+  gap: 10px;
+}
+
+.calendar-day {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.calendar-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #21262d;
+  background: #0d1117;
+}
+.calendar-day-head strong { font-size: 13px; }
+
+.calendar-slot {
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 48px;
+}
+
+.scheduled-card {
+  background: #0f3526;
+  border: 1px solid #238636;
+  border-radius: 10px;
+  padding: 7px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.scheduled-card:hover { border-color: #3fb950; }
+.scheduled-card-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+.scheduled-card-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unschedule-btn {
+  background: none;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.unschedule-btn:hover { color: #ff7b72; }
+
+.add-slot-btn {
+  background: none;
+  border: 1px dashed #30363d;
+  border-radius: 10px;
+  color: #8b949e;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+}
+.add-slot-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+.slot-picker {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.slot-picker select, .slot-picker input[type="time"] {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #e6edf3;
+  font-size: 13px;
+  width: 100%;
+}
+.slot-picker-actions { display: flex; gap: 6px; }
+.slot-picker-actions button {
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  background: #161b22;
+  color: #c9d1d9;
+}
+.slot-picker-actions button:hover { border-color: #8b949e; }
+
+/* Drafts Studio */
+.grid.three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 700px) { .grid.three { grid-template-columns: 1fr; } }
+
+.drafts-list {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+.drafts-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 13px;
+}
+
+.draft-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.draft-card.raw { border-color: #6e2d0a; }
+.draft-card.status-approved { border-color: #238636; }
+.draft-card.status-rejected { opacity: .6; }
+
+.draft-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #21262d;
+}
+.draft-card-head:hover { background: #1c2128; }
+
+.draft-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.draft-score {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.draft-status-row { display: flex; align-items: center; gap: 8px; }
+.draft-status-select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #c9d1d9;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.draft-content {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.draft-details {
+  padding: 0 14px 12px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #8b949e;
+  border-top: 1px solid #21262d;
+  padding-top: 12px;
+}
+.draft-details p { margin: 0; }
+.draft-details strong { color: #c9d1d9; }
+
+.draft-expand-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid #21262d;
+  color: #8b949e;
+  padding: 7px;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: center;
+}
+.draft-expand-btn:hover { color: #e6edf3; background: #1c2128; }
