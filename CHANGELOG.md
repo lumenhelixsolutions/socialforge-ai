@@ -1,7 +1,17 @@
 # Changelog
 
-## [Unreleased] — v0.3.3
+## v0.3.3 — Stability, Observability, and Code Quality
 
+- **Frontend component split**: App.jsx (2000-line monolith) extracted into 9 focused component files under `src/components/`; shared utilities in `src/lib/utils.js`; constants in `src/lib/constants.js`; App.jsx reduced to ~120 lines of composition
+- **Duplicate API key fix**: `models` key appeared twice in `api.js`; second definition removed
+- **Error boundary**: `ErrorBoundary` class component wraps entire app; render crashes show recovery UI with "Try again" button instead of a blank screen
+- **Toast system**: `addToast(message, type)` with 4.5s auto-dismiss; `ToastContainer` overlay; success/info/error variants; used for card duplication and deletion feedback
+- **Card duplication**: `POST /api/task-cards/{id}/duplicate` copies all config fields, clears review state, appends " (copy)" to title, audits as `created_as_duplicate`; Duplicate button in inspector Actions tab fires success toast
+- **Campaign deletion**: `DELETE /api/campaigns/{id}` nulls `campaign_id` on linked task cards before deleting; Trash2 button in CampaignsManager header with confirmation dialog
+- **Global audit log**: `GET /api/audit-log?limit=N` joins `audit_events` with `task_cards` for `card_title`; displayed in Health tab Recent Activity panel
+- **Stats endpoint**: `GET /api/stats` returns `cards_by_state` counts + brands/campaigns/active_drafts totals
+- **Health tab overhaul**: rewritten as 4-panel grid — Diagnostics checks, Board stats (8-state breakdown), Local models list, Recent activity (40 events)
+- **fix**: `card_type` added to `update_task_card()` allowed list (was present in `TaskCardUpdate` schema but missing from service layer)
 - **Task card deletion**: `DELETE /api/task-cards/{id}` permanently removes a card and its audit history; decrements parent child_count; Delete button in inspector Actions tab
 - **Hide archived toggle**: board filter bar gains "Archived (N)" toggle button; archived cards hidden by default so the board stays clean
 - **Model picker in inspector**: when Ollama is online and returns models, a Model dropdown appears in the Actions tab; selected model passed to Generate and Polish actions via `cardAction(id, action, model)`

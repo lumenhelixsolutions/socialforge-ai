@@ -35,7 +35,6 @@ export const api = {
   generateDrafts: (payload) => request("/api/drafts/generate", { method: "POST", body: JSON.stringify(payload) }),
   updateDraftStatus: (id, status) => request(`/api/drafts/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   promoteDraft: (id) => request(`/api/drafts/${id}/promote-safe`, { method: "POST" }),
-  models: () => request("/api/models"),
   taskCards: () => request("/api/task-cards"),
   duplicateTaskCard: (id) => request(`/api/task-cards/${id}/duplicate`, { method: "POST" }),
   deleteTaskCard: (id) => request(`/api/task-cards/${id}`, { method: "DELETE" }),

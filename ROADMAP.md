@@ -14,7 +14,7 @@ Released.
 
 ## v0.3.2 — Quality + Polish Foundation
 
-In progress.
+Released.
 
 - Platform-aware fallback draft generation (each platform gets appropriate tone/format)
 - `polish` card action: AI-assisted content refinement using local model
@@ -22,9 +22,6 @@ In progress.
 - Proper error handling across all API routes
 - Archive action uses typed payload instead of raw object hack
 - Diagnostics service hardened against missing model health fields
-
-Completed in this milestone:
-
 - Better WYSIWYG editor (auto-resize, char bar, field hints)
 - Saved brand presets UI (Brands tab, create/list brand profiles)
 - Saved platform presets (localStorage-backed presets in New Card form)
@@ -32,6 +29,29 @@ Completed in this milestone:
 - Import/export task JSON (GET /api/task-cards/{id}/export + JSON import panel)
 - Campaigns management UI (Campaigns tab, expandable campaign cards, status toggle)
 - `needs_edit` board column (was missing from frontend, cards silently fell back to "idea")
+
+## v0.3.3 — Stability, Observability, and Code Quality
+
+Released.
+
+- Frontend component split (App.jsx → 9 focused component files)
+- Error boundary + toast notification system
+- Card duplication endpoint and UI
+- Campaign deletion with cascade null
+- Global audit log endpoint with card title join
+- Stats endpoint (cards_by_state + entity counts)
+- Health tab overhaul (4-panel grid)
+- Duplicate `models` API key fixed
+- Brand full CRUD (PATCH + DELETE)
+- Campaign full CRUD (GET by id + DELETE)
+- Board hide-archived toggle
+- Model picker per AI action
+- Inspector inline card editing
+- Draft → Task Card conversion
+- Board search/filter bar
+- Calendar overhaul (queue + per-day slot picker)
+- Drafts Studio tab
+- 22-test backend suite
 
 ## v0.4.0 — Calendar + Scheduler Authority
 
