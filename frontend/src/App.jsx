@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  FolderKanban,
   GripVertical,
   LayoutDashboard,
   ListChecks,
@@ -17,6 +18,7 @@ import {
   Sparkles,
   Tag,
   Wand2,
+  X,
 } from "lucide-react";
 import {
   DndContext,
@@ -107,6 +109,7 @@ function App() {
   const [tab, setTab] = useState("board");
   const [diagnostics, setDiagnostics] = useState(null);
   const [brands, setBrands] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [cards, setCards] = useState([]);
   const [meta, setMeta] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -116,14 +119,16 @@ function App() {
   async function refreshAll(nextSelectedId = selectedId) {
     setError("");
     try {
-      const [d, b, tc, m] = await Promise.all([
+      const [d, b, camp, tc, m] = await Promise.all([
         api.diagnostics(),
         api.brands(),
+        api.campaigns(),
         api.taskCards(),
         api.taskCardMeta(),
       ]);
       setDiagnostics(d);
       setBrands(b);
+      setCampaigns(camp);
       setCards(tc);
       setMeta(m);
       if (nextSelectedId) {
@@ -165,6 +170,7 @@ function App() {
           <button className={tab === "board" ? "active" : ""} onClick={() => setTab("board")}><LayoutDashboard size={18}/> Job Board</button>
           <button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><Plus size={18}/> New Card</button>
           <button className={tab === "brands" ? "active" : ""} onClick={() => setTab("brands")}><Tag size={18}/> Brands</button>
+          <button className={tab === "campaigns" ? "active" : ""} onClick={() => setTab("campaigns")}><FolderKanban size={18}/> Campaigns</button>
           <button className={tab === "calendar" ? "active" : ""} onClick={() => setTab("calendar")}><CalendarDays size={18}/> Calendar</button>
           <button className={tab === "health" ? "active" : ""} onClick={() => setTab("health")}><Activity size={18}/> Health</button>
         </nav>
@@ -192,6 +198,7 @@ function App() {
           {tab === "create" && (
             <TaskCardCreator
               brands={brands}
+              campaigns={campaigns}
               templates={templates}
               refresh={refreshAll}
               selectCard={selectCard}
@@ -200,6 +207,17 @@ function App() {
 
           {tab === "brands" && (
             <BrandsManager brands={brands} refresh={refreshAll} setError={setError} />
+          )}
+
+          {tab === "campaigns" && (
+            <CampaignsManager
+              campaigns={campaigns}
+              cards={cards}
+              brands={brands}
+              refresh={refreshAll}
+              selectCard={(id) => { selectCard(id); setTab("board"); }}
+              setError={setError}
+            />
           )}
 
           {tab === "calendar" && (
@@ -215,6 +233,8 @@ function App() {
           detail={selectedDetail}
           selectedCard={selectedCard}
           platformPreviewRules={platformPreviewRules}
+          brands={brands}
+          campaigns={campaigns}
           refresh={refreshAll}
           selectCard={selectCard}
           setError={setError}
@@ -366,10 +386,10 @@ function TaskCard({ card, active, onClick, dragHandleProps = {} }) {
   );
 }
 
-function TaskCardCreator({ brands, templates, refresh, selectCard }) {
+function TaskCardCreator({ brands, campaigns, templates, refresh, selectCard }) {
   const [form, setForm] = useState({
     title: "", card_type: "post", objective: "", output_type: "post",
-    brand_id: "", platform: "x", source_material: "", ai_role: "writer",
+    brand_id: "", campaign_id: "", platform: "x", source_material: "", ai_role: "writer",
     model_lane: "safe", constraints: "", workflow_rule: "approval_required",
     execution_plan: "", preview: "",
   });
@@ -396,7 +416,11 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
     e.preventDefault();
     setMessage("");
     try {
-      const card = await api.createTaskCard({ ...form, brand_id: form.brand_id ? Number(form.brand_id) : null });
+      const card = await api.createTaskCard({
+        ...form,
+        brand_id: form.brand_id ? Number(form.brand_id) : null,
+        campaign_id: form.campaign_id ? Number(form.campaign_id) : null,
+      });
       await refresh(card.id);
       await selectCard(card.id);
       setMessage("Visual AI task card created.");
@@ -424,6 +448,8 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
           </div>
         </div>
 
+        <PresetsPanel form={form} onLoad={fields => setForm(prev => ({ ...prev, ...fields }))} />
+
         <SetupStep n="1" title="Objective">
           <label>Card title <input value={form.title} onChange={e => update("title", e.target.value)} required placeholder="OIQ launch post" /></label>
           <label>Objective <textarea value={form.objective} onChange={e => update("objective", e.target.value)} placeholder="What should this AI job accomplish?" /></label>
@@ -431,14 +457,16 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
 
         <SetupStep n="2" title="Output and destination">
           <div className="grid two">
-            <label>Card type
-              <select value={form.card_type} onChange={e => update("card_type", e.target.value)}>
-                {cardTypes.map(x => <option key={x}>{x}</option>)}
-              </select>
-            </label>
             <label>Output type
               <select value={form.output_type} onChange={e => update("output_type", e.target.value)}>
                 {outputTypes.map(x => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+            <label>Workflow rule
+              <select value={form.workflow_rule} onChange={e => update("workflow_rule", e.target.value)}>
+                <option value="approval_required">Approval required</option>
+                <option value="auto_approve">Auto approve</option>
+                <option value="review_only">Review only</option>
               </select>
             </label>
           </div>
@@ -449,6 +477,14 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
                 {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </label>
+            <label>Campaign
+              <select value={form.campaign_id} onChange={e => update("campaign_id", e.target.value)}>
+                <option value="">No campaign</option>
+                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="grid two">
             <label>Platform
               <select value={form.platform} onChange={e => update("platform", e.target.value)}>
                 <option value="x">X</option>
@@ -457,6 +493,11 @@ function TaskCardCreator({ brands, templates, refresh, selectCard }) {
                 <option value="mastodon">Mastodon</option>
                 <option value="youtube">YouTube</option>
                 <option value="tiktok">TikTok</option>
+              </select>
+            </label>
+            <label>Card type
+              <select value={form.card_type} onChange={e => update("card_type", e.target.value)}>
+                {cardTypes.map(x => <option key={x}>{x}</option>)}
               </select>
             </label>
           </div>
@@ -647,16 +688,19 @@ function RiskBreakdown({ card }) {
   );
 }
 
-function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, selectCard, setError }) {
+function JobInspector({ detail, selectedCard, platformPreviewRules, brands, campaigns, refresh, selectCard, setError }) {
   const card = detail?.card || selectedCard;
   const [schedule, setSchedule] = useState("");
   const [running, setRunning] = useState("");
+  const [itab, setItab] = useState("setup");
 
   if (!card) {
     return (
       <aside className="inspector">
-        <h2>No card selected</h2>
-        <p>Select a card to inspect its AI task setup, preview, schedule, risk, and history.</p>
+        <div className="inspector-empty">
+          <h2>No card selected</h2>
+          <p>Select a card from the board to inspect its AI task setup, preview, risk score, and history.</p>
+        </div>
       </aside>
     );
   }
@@ -711,109 +755,144 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, refresh, sel
 
   const explanation = detail?.explanation;
   const history = detail?.history || [];
+  const brand = brands.find(b => b.id === card.brand_id);
+  const campaign = campaigns.find(c => c.id === card.campaign_id);
 
   return (
     <aside className="inspector">
       <div className="inspector-head">
-        <h2>{card.title}</h2>
-        <span className={`badge ${card.model_lane === "raw" ? "raw" : ""}`}>{card.model_lane}</span>
+        <div>
+          <h2>{card.title}</h2>
+          <div className="inspector-badges">
+            <span className={`badge ${card.model_lane === "raw" ? "raw" : ""}`}>{card.model_lane}</span>
+            <span className="badge">{card.workflow_state.replaceAll("_", " ")}</span>
+            {card.risk_score > 0 && (
+              <span className={`badge ${card.risk_score >= 80 ? "risk-badge-ok" : card.risk_score >= 60 ? "risk-badge-med" : "risk-badge-bad"}`}>
+                Risk {card.risk_score}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      <p className="doctrine">Visible, inspectable, schedulable, programmable AI work order.</p>
+      <div className="inspector-tabs">
+        {[["setup", "Setup"], ["preview", "Preview"], ["actions", "Actions"], ["history", "History"]].map(([id, label]) => (
+          <button key={id} className={itab === id ? "active" : ""} onClick={() => setItab(id)}>{label}</button>
+        ))}
+      </div>
 
-      <section className="inspector-section">
-        <h3>Truth panel</h3>
-        <dl>
-          <dt>Type</dt><dd>{card.card_type} / {card.output_type}</dd>
-          <dt>Platform</dt><dd>{card.platform}</dd>
-          <dt>State</dt><dd>{card.workflow_state.replaceAll("_", " ")}</dd>
-          <dt>Approval</dt><dd>{card.approval_state.replaceAll("_", " ")}</dd>
-          <dt>Risk</dt><dd>{card.risk_score || "Not reviewed"}</dd>
-          <dt>Scheduled</dt><dd>{card.scheduled_at || "Not scheduled"}</dd>
-        </dl>
-      </section>
+      {itab === "setup" && (
+        <>
+          <section className="inspector-section">
+            <h3>Card</h3>
+            <dl>
+              <dt>Type</dt><dd>{card.card_type} / {card.output_type}</dd>
+              <dt>Platform</dt><dd>{card.platform}</dd>
+              <dt>Approval</dt><dd>{card.approval_state.replaceAll("_", " ")}</dd>
+              {card.scheduled_at && <><dt>Scheduled</dt><dd>{card.scheduled_at}</dd></>}
+              {brand && <><dt>Brand</dt><dd>{brand.name}</dd></>}
+              {campaign && <><dt>Campaign</dt><dd>{campaign.name}</dd></>}
+            </dl>
+          </section>
 
-      <RiskBreakdown card={card} />
+          <section className="inspector-section">
+            <h3>AI task</h3>
+            <p><strong>Objective:</strong> {card.objective || "No objective set."}</p>
+            <p><strong>Role:</strong> {card.ai_role}</p>
+            {card.constraints && <p><strong>Constraints:</strong> {card.constraints}</p>}
+            {card.execution_plan && <p><strong>Execution:</strong> {card.execution_plan}</p>}
+          </section>
 
-      <section className="inspector-section">
-        <h3>AI task setup</h3>
-        <p><strong>Objective:</strong> {card.objective || "No objective set."}</p>
-        <p><strong>Role:</strong> {card.ai_role}</p>
-        <p><strong>Constraints:</strong> {card.constraints || "No constraints."}</p>
-        <p><strong>Execution:</strong> {card.execution_plan || "No execution plan."}</p>
-      </section>
+          {card.reviewer_notes && (
+            <section className="inspector-section">
+              <h3>Reviewer notes</h3>
+              <p>{card.reviewer_notes}</p>
+            </section>
+          )}
 
-      <EditablePreviewPanel
-        card={card}
-        platformPreviewRules={platformPreviewRules}
-        refresh={refresh}
-        selectCard={selectCard}
-        setError={setError}
-      />
+          {explanation && (
+            <section className="inspector-section">
+              <h3>Next action</h3>
+              <p>{explanation.what_happens_next}</p>
+            </section>
+          )}
 
-      {card.reviewer_notes && (
-        <section className="inspector-section">
-          <h3>Reviewer notes</h3>
-          <p>{card.reviewer_notes}</p>
-        </section>
+          {detail?.children?.length > 0 && (
+            <section className="inspector-section">
+              <h3>Child jobs</h3>
+              {detail.children.map(child => (
+                <button key={child.id} className="child-link" onClick={() => selectCard(child.id)}>
+                  <ChevronRight size={14}/> {child.title}
+                </button>
+              ))}
+            </section>
+          )}
+        </>
       )}
 
-      {explanation && (
-        <section className="inspector-section">
-          <h3>Next best action</h3>
-          <p>{explanation.what_happens_next}</p>
-        </section>
+      {itab === "preview" && (
+        <>
+          <RiskBreakdown card={card} />
+          <EditablePreviewPanel
+            card={card}
+            platformPreviewRules={platformPreviewRules}
+            refresh={refresh}
+            selectCard={selectCard}
+            setError={setError}
+          />
+        </>
       )}
 
-      {detail?.children?.length > 0 && (
+      {itab === "actions" && (
+        <>
+          <section className="inspector-section">
+            <h3>AI actions</h3>
+            <div className="action-grid">
+              <button onClick={() => action("generate")} disabled={!!running} className={running === "generate" ? "running" : ""}><Sparkles size={14}/> {running === "generate" ? "Generating…" : "Generate"}</button>
+              <button onClick={() => action("polish")}   disabled={!!running} className={running === "polish"   ? "running" : ""}><Wand2 size={14}/> {running === "polish"   ? "Polishing…" : "Polish"}</button>
+              <button onClick={() => action("review")}   disabled={!!running} className={running === "review"   ? "running" : ""}><ListChecks size={14}/> {running === "review"   ? "Reviewing…" : "Review"}</button>
+              <button onClick={() => action("promote_raw")} disabled={!!running}><Flame size={14}/> Promote Raw</button>
+              <button onClick={() => action("split_bulk")}  disabled={!!running}><Bot size={14}/> Split Bulk</button>
+            </div>
+          </section>
+
+          <section className="inspector-section">
+            <h3>Move</h3>
+            <div className="action-grid">
+              <button onClick={() => move("approved")}   disabled={!!running}><CheckCircle size={14}/> Approve</button>
+              <button onClick={() => move("needs_edit")} disabled={!!running}><Pencil size={14}/> Send to Edit</button>
+              <button onClick={() => move("archived")}   disabled={!!running}><Archive size={14}/> Archive</button>
+            </div>
+          </section>
+
+          <section className="inspector-section">
+            <h3>Schedule</h3>
+            <input type="datetime-local" value={schedule} onChange={e => setSchedule(e.target.value)} />
+            <button className="primary full" onClick={() => move("scheduled")} disabled={!!running}><CalendarDays size={14}/> Schedule Card</button>
+            <small>Scheduling creates a local job state. It does not publish to any platform.</small>
+          </section>
+
+          <section className="inspector-section">
+            <h3>Export</h3>
+            <button className="action-grid-full" onClick={exportCard}>↓ Export card as JSON</button>
+            <small>Downloads a JSON file you can re-import to create a new card.</small>
+          </section>
+        </>
+      )}
+
+      {itab === "history" && (
         <section className="inspector-section">
-          <h3>Child jobs</h3>
-          {detail.children.map(child => (
-            <button key={child.id} className="child-link" onClick={() => selectCard(child.id)}>
-              <ChevronRight size={14}/> {child.title}
-            </button>
+          <h3>History</h3>
+          {history.length === 0 && <p>No card history yet.</p>}
+          {history.slice(0, 12).map(event => (
+            <div className="history-row" key={event.id}>
+              <strong>{event.action}</strong>
+              <span>{event.before_state || "—"} → {event.after_state || "—"}</span>
+              <small>{event.created_at}</small>
+            </div>
           ))}
         </section>
       )}
-
-      <section className="inspector-section">
-        <h3>Actions</h3>
-        <div className="action-grid">
-          <button onClick={() => action("generate")} disabled={!!running} className={running === "generate" ? "running" : ""}><Sparkles size={14}/> {running === "generate" ? "Generating…" : "Generate"}</button>
-          <button onClick={() => action("polish")}   disabled={!!running} className={running === "polish"   ? "running" : ""}><Wand2 size={14}/> {running === "polish"   ? "Polishing…" : "Polish"}</button>
-          <button onClick={() => action("review")}   disabled={!!running} className={running === "review"   ? "running" : ""}><ListChecks size={14}/> {running === "review"   ? "Reviewing…" : "Review"}</button>
-          <button onClick={() => move("approved")}   disabled={!!running}><CheckCircle size={14}/> Approve</button>
-          <button onClick={() => move("needs_edit")} disabled={!!running}><Pencil size={14}/> Send to Edit</button>
-          <button onClick={() => action("promote_raw")} disabled={!!running}><Flame size={14}/> Promote Raw</button>
-          <button onClick={() => action("split_bulk")}  disabled={!!running}><Bot size={14}/> Split Bulk</button>
-          <button onClick={() => move("archived")}   disabled={!!running}><Archive size={14}/> Archive</button>
-        </div>
-      </section>
-
-      <section className="inspector-section">
-        <h3>Export</h3>
-        <button className="action-grid-full" onClick={exportCard}>↓ Export card as JSON</button>
-        <small>Downloads a JSON file you can re-import to create a new card.</small>
-      </section>
-
-      <section className="inspector-section">
-        <h3>Schedule</h3>
-        <input type="datetime-local" value={schedule} onChange={e => setSchedule(e.target.value)} />
-        <button className="primary full" onClick={() => move("scheduled")}><CalendarDays size={14}/> Schedule Card</button>
-        <small>Scheduling creates a local scheduled job state. It does not publish.</small>
-      </section>
-
-      <section className="inspector-section">
-        <h3>History</h3>
-        {history.length === 0 && <p>No card history yet.</p>}
-        {history.slice(0, 8).map(event => (
-          <div className="history-row" key={event.id}>
-            <strong>{event.action}</strong>
-            <span>{event.before_state || "—"} → {event.after_state || "—"}</span>
-            <small>{event.created_at}</small>
-          </div>
-        ))}
-      </section>
     </aside>
   );
 }
@@ -982,6 +1061,182 @@ function Health({ diagnostics, refresh }) {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function PresetsPanel({ form, onLoad }) {
+  const [presets, setPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("sf-presets") || "[]"); } catch { return []; }
+  });
+  const [saveName, setSaveName] = useState("");
+  const [open, setOpen] = useState(false);
+
+  function save() {
+    if (!saveName.trim()) return;
+    const preset = {
+      name: saveName.trim(),
+      platform: form.platform,
+      ai_role: form.ai_role,
+      model_lane: form.model_lane,
+      constraints: form.constraints,
+      execution_plan: form.execution_plan,
+    };
+    const updated = [...presets.filter(p => p.name !== preset.name), preset];
+    localStorage.setItem("sf-presets", JSON.stringify(updated));
+    setPresets(updated);
+    setSaveName("");
+  }
+
+  function remove(name) {
+    const updated = presets.filter(p => p.name !== name);
+    localStorage.setItem("sf-presets", JSON.stringify(updated));
+    setPresets(updated);
+  }
+
+  return (
+    <div className="preset-panel">
+      <div className="preset-panel-head">
+        <strong>Saved presets</strong>
+        <button type="button" className="preset-toggle" onClick={() => setOpen(o => !o)}>
+          {open ? "Hide" : "Show"}
+        </button>
+      </div>
+      {open && (
+        <div className="preset-panel-body">
+          {presets.length === 0 && <small>No presets yet. Fill the platform, role, constraints, and execution plan fields, then save.</small>}
+          <div className="preset-chips">
+            {presets.map(p => (
+              <div key={p.name} className="preset-chip">
+                <button type="button" onClick={() => onLoad(p)}>{p.name}</button>
+                <button type="button" className="preset-delete" onClick={() => remove(p.name)} title="Remove preset"><X size={11}/></button>
+              </div>
+            ))}
+          </div>
+          <div className="preset-save-row">
+            <input
+              placeholder="Preset name"
+              value={saveName}
+              onChange={e => setSaveName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); save(); } }}
+            />
+            <button type="button" onClick={save} disabled={!saveName.trim()}>Save preset</button>
+          </div>
+          <small>Saves platform, AI role, model lane, constraints, and execution plan.</small>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setError }) {
+  const empty = { name: "", goal: "", brand_id: "" };
+  const [form, setForm] = useState(empty);
+  const [message, setMessage] = useState("");
+  const [expanded, setExpanded] = useState(null);
+
+  function update(k, v) { setForm(prev => ({ ...prev, [k]: v })); }
+
+  async function submit(e) {
+    e.preventDefault();
+    setMessage("");
+    try {
+      await api.createCampaign({ ...form, brand_id: form.brand_id ? Number(form.brand_id) : null });
+      await refresh();
+      setForm(empty);
+      setMessage("Campaign created.");
+    } catch (err) {
+      setMessage(readableError(err));
+    }
+  }
+
+  async function toggleStatus(campaign) {
+    try {
+      await api.updateCampaign(campaign.id, { status: campaign.status === "active" ? "closed" : "active" });
+      await refresh();
+    } catch (err) {
+      setError(readableError(err));
+    }
+  }
+
+  return (
+    <section>
+      <header className="page-header">
+        <div>
+          <h1>Campaign Planner</h1>
+          <p>Group task cards into named campaigns. Campaigns track a shared goal and brand across multiple cards.</p>
+        </div>
+      </header>
+
+      {campaigns.length > 0 && (
+        <div className="campaign-list">
+          {campaigns.map(camp => {
+            const campCards = cards.filter(c => c.campaign_id === camp.id);
+            const brandName = brands.find(b => b.id === camp.brand_id)?.name;
+            const isOpen = expanded === camp.id;
+            return (
+              <div className={`campaign-card ${camp.status === "closed" ? "closed" : ""}`} key={camp.id}>
+                <div className="campaign-card-head" onClick={() => setExpanded(isOpen ? null : camp.id)}>
+                  <div>
+                    <strong>{camp.name}</strong>
+                    {brandName && <span className="brand-label">{brandName}</span>}
+                    {camp.goal && <span className="campaign-goal">{camp.goal}</span>}
+                  </div>
+                  <div className="campaign-card-meta">
+                    <span className={`badge ${camp.status === "closed" ? "" : "badge-active"}`}>{camp.status}</span>
+                    <span className="badge">{campCards.length} card{campCards.length !== 1 ? "s" : ""}</span>
+                    <ChevronRight size={14} className={isOpen ? "rotated" : ""}/>
+                  </div>
+                </div>
+
+                {isOpen && (
+                  <div className="campaign-card-body">
+                    {campCards.length === 0 && <p>No cards assigned to this campaign yet.</p>}
+                    <div className="campaign-cards-grid">
+                      {campCards.map(c => (
+                        <TaskCard key={c.id} card={c} onClick={() => selectCard(c.id)} />
+                      ))}
+                    </div>
+                    <div className="campaign-actions">
+                      <button type="button" onClick={() => toggleStatus(camp)}>
+                        {camp.status === "active" ? "Close campaign" : "Reopen campaign"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {campaigns.length === 0 && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <p>No campaigns yet. Create one below to group related task cards under a shared goal.</p>
+        </div>
+      )}
+
+      <form className="card form" onSubmit={submit}>
+        <h2><FolderKanban size={18}/> New campaign</h2>
+
+        <label>Campaign name
+          <input value={form.name} onChange={e => update("name", e.target.value)} required placeholder="Launch Week Q2" />
+        </label>
+
+        <label>Goal
+          <textarea value={form.goal} onChange={e => update("goal", e.target.value)} placeholder="What is this campaign trying to achieve?" style={{ minHeight: 70 }} />
+        </label>
+
+        <label>Brand (optional)
+          <select value={form.brand_id} onChange={e => update("brand_id", e.target.value)}>
+            <option value="">No brand</option>
+            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+        </label>
+
+        <button className="primary"><Plus size={16}/> Create Campaign</button>
+        {message && <p className="note">{message}</p>}
+      </form>
     </section>
   );
 }

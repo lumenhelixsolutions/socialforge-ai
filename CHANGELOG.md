@@ -2,9 +2,17 @@
 
 ## v0.3.2 — Quality + Polish Foundation
 
-- Platform-aware fallback drafts: each platform (X, LinkedIn, Instagram, TikTok, Mastodon, YouTube) now gets appropriately formatted fallback content when Ollama is unavailable
+- **Campaigns Management UI**: new Campaigns tab (FolderKanban icon) with list of campaigns, expandable per-campaign card view, open/close status toggle, and create form; campaign dropdown added to New Card step 2
+- **Inspector tab navigation**: JobInspector split into Setup / Preview / Actions / History tabs; risk score and state badges shown in header; no longer a single scrolling column
+- **Saved presets panel**: localStorage-backed platform+role+constraints+execution presets in New Card form; save, load by name, and delete presets
+- **Campaigns backend**: `GET /api/campaigns/{id}` returns campaign with its task cards; `PATCH /api/campaigns/{id}` updates name/goal/status
+- **`needs_edit` board column**: cards sent for revision now appear in the correct board column (was silently falling back to "idea")
+- **Card export/import**: `GET /api/task-cards/{id}/export` endpoint; Export button in inspector Actions tab; JSON import panel in New Card form pre-fills all fields
+- **EditablePreviewPanel**: auto-resize textarea, platform field hint chips from meta endpoint, character progress bar (warn at 80%, over at 100%)
+- **JobInspector loading states**: Generate/Polish/Review buttons disable and relabel while in flight; Polish (Wand2) and Send-to-Edit (Pencil) buttons
+- Platform-aware fallback drafts: each platform gets appropriately formatted fallback content when Ollama is unavailable
 - `polish` card action: refines existing draft content through local model, then moves card to `needs_review`; gracefully falls back to original content if model is unavailable
-- Brand context now applied to all `review_content` calls in task card flows (move-to-review, review action, generate action) — brand preferred words and forbidden claims now score correctly for task cards
+- Brand context now applied to all `review_content` calls in task card flows (move-to-review, review action, generate action)
 - `campaigns.py`: added error handling on create to return proper HTTP 400 instead of raw DB errors
 - `diagnostics_service.py`: use `.get()` for safe model health dict access
 - `task_card_service.py`: archive action now uses `TaskCardMove` schema instead of an anonymous class object

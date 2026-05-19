@@ -30,6 +30,11 @@ class CampaignCreate(BaseModel):
     goal: str = ""
     brand_id: Optional[int] = None
 
+class CampaignUpdate(BaseModel):
+    name: Optional[str] = None
+    goal: Optional[str] = None
+    status: Optional[str] = None
+
 class TaskCardCreate(BaseModel):
     title: str
     card_type: str = Field(default="post", pattern="^(campaign|bulk|post|image|video|review|polish|repurpose)$")

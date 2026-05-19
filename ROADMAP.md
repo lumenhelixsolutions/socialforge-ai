@@ -23,14 +23,15 @@ In progress.
 - Archive action uses typed payload instead of raw object hack
 - Diagnostics service hardened against missing model health fields
 
-Upcoming in this milestone:
+Completed in this milestone:
 
-- Better WYSIWYG editor
-- Saved brand presets UI
-- Saved platform presets
-- Saved task templates
-- Better inspector layout
-- Import/export task JSON
+- Better WYSIWYG editor (auto-resize, char bar, field hints)
+- Saved brand presets UI (Brands tab, create/list brand profiles)
+- Saved platform presets (localStorage-backed presets in New Card form)
+- Better inspector layout (tab navigation: Setup / Preview / Actions / History)
+- Import/export task JSON (GET /api/task-cards/{id}/export + JSON import panel)
+- Campaigns management UI (Campaigns tab, expandable campaign cards, status toggle)
+- `needs_edit` board column (was missing from frontend, cards silently fell back to "idea")
 
 ## v0.4.0 — Calendar + Scheduler Authority
 
