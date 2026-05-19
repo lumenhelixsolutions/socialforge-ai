@@ -7,6 +7,7 @@ from app.services.task_card_service import (
     PLATFORM_PREVIEW_RULES,
     analyze_preview_text,
     create_task_card,
+    delete_task_card,
     export_task_card,
     explain_card,
     get_card_history,
@@ -90,3 +91,10 @@ async def card_action(card_id: int, payload: TaskCardAction):
         return await run_card_action(card_id, payload)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+@router.delete("/task-cards/{card_id}")
+def delete_card(card_id: int):
+    try:
+        return delete_task_card(card_id)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

@@ -2,6 +2,11 @@
 
 ## [Unreleased] — v0.3.3
 
+- **Task card deletion**: `DELETE /api/task-cards/{id}` permanently removes a card and its audit history; decrements parent child_count; Delete button in inspector Actions tab
+- **Hide archived toggle**: board filter bar gains "Archived (N)" toggle button; archived cards hidden by default so the board stays clean
+- **Model picker in inspector**: when Ollama is online and returns models, a Model dropdown appears in the Actions tab; selected model passed to Generate and Polish actions via `cardAction(id, action, model)`
+- **Campaign inline editing**: each campaign card has an Edit button that expands an inline name/goal form, saving via PATCH
+- **Backend test suite expanded**: 13 new tests in `test_new_endpoints.py` covering brand update/delete, campaign get-by-id/update, task card export, card deletion, and card_type update
 - **Inspector card editing**: Setup tab now has an Edit button; opens inline form for title, card_type, output_type, platform, ai_role, model_lane, workflow_rule, objective, constraints, execution_plan, source_material; saves via PATCH; source_material shown as collapsible details in read-only view
 - **Draft → Task Card**: DraftCard "→ Create Task Card" button creates a task card directly from draft content (content→preview+source_material, topic→title, platform/brand preserved), then navigates to the new card on the board
 - **Job board search/filter**: filter bar above board with text search (title/objective/preview), platform dropdown, and lane dropdown; Clear button when any filter is active; column headers show card count badge

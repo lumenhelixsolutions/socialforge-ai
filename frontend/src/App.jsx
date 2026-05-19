@@ -115,6 +115,7 @@ function App() {
   const [campaigns, setCampaigns] = useState([]);
   const [cards, setCards] = useState([]);
   const [meta, setMeta] = useState(null);
+  const [availableModels, setAvailableModels] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [error, setError] = useState("");
@@ -134,6 +135,7 @@ function App() {
       setCampaigns(camp);
       setCards(tc);
       setMeta(m);
+      api.models().then(r => setAvailableModels(r.models || [])).catch(() => {});
       if (nextSelectedId) {
         const detail = await api.taskCard(nextSelectedId);
         setSelectedDetail(detail);
@@ -250,6 +252,7 @@ function App() {
           platformPreviewRules={platformPreviewRules}
           brands={brands}
           campaigns={campaigns}
+          availableModels={availableModels}
           refresh={refreshAll}
           selectCard={selectCard}
           setError={setError}
@@ -305,6 +308,7 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
   const [query, setQuery] = useState("");
   const [filterPlatform, setFilterPlatform] = useState("");
   const [filterLane, setFilterLane] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -313,6 +317,7 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
 
   const filteredCards = useMemo(() => {
     let out = cards;
+    if (!showArchived) out = out.filter(c => c.workflow_state !== "archived");
     if (query.trim()) {
       const q = query.toLowerCase();
       out = out.filter(c =>
@@ -324,7 +329,7 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
     if (filterPlatform) out = out.filter(c => c.platform === filterPlatform);
     if (filterLane)     out = out.filter(c => c.model_lane === filterLane);
     return out;
-  }, [cards, query, filterPlatform, filterLane]);
+  }, [cards, query, filterPlatform, filterLane, showArchived]);
 
   const grouped = useMemo(() => {
     const result = Object.fromEntries(columns.map(([id]) => [id, []]));
@@ -335,6 +340,7 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
     return result;
   }, [filteredCards]);
 
+  const archivedCount = cards.filter(c => c.workflow_state === "archived").length;
   const isFiltered = query || filterPlatform || filterLane;
 
   async function onDragEnd(event) {
@@ -384,6 +390,13 @@ function JobBoard({ cards, selectedId, selectCard, refresh, setError }) {
           <option value="reviewer">Reviewer</option>
           <option value="polish">Polish</option>
         </select>
+        <button
+          className={`filter-clear-btn ${showArchived ? "filter-active" : ""}`}
+          onClick={() => setShowArchived(s => !s)}
+          title={showArchived ? "Hide archived cards" : "Show archived cards"}
+        >
+          <Archive size={13}/> {showArchived ? "Hide archived" : `Archived (${archivedCount})`}
+        </button>
         {isFiltered && (
           <button className="filter-clear-btn" onClick={() => { setQuery(""); setFilterPlatform(""); setFilterLane(""); }}>
             <X size={13}/> Clear
@@ -760,11 +773,12 @@ function RiskBreakdown({ card }) {
   );
 }
 
-function JobInspector({ detail, selectedCard, platformPreviewRules, brands, campaigns, refresh, selectCard, setError }) {
+function JobInspector({ detail, selectedCard, platformPreviewRules, brands, campaigns, availableModels, refresh, selectCard, setError }) {
   const card = detail?.card || selectedCard;
   const [schedule, setSchedule] = useState("");
   const [running, setRunning] = useState("");
   const [itab, setItab] = useState("setup");
+  const [selectedModel, setSelectedModel] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -825,7 +839,7 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
     if (!window.confirm(actionLabels[actionName] || `Run ${actionName}?`)) return;
     setRunning(actionName);
     try {
-      const result = await api.cardAction(card.id, actionName);
+      const result = await api.cardAction(card.id, actionName, selectedModel || undefined);
       if (result?.id) {
         await refresh(result.id);
         await selectCard(result.id);
@@ -859,6 +873,16 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
       card, target_state, refresh, selectCard, setError,
       target_state === "scheduled" ? { scheduled_at: schedule || new Date(Date.now() + 86400000).toISOString() } : {}
     );
+  }
+
+  async function deleteCard() {
+    if (!window.confirm(`Permanently delete "${card.title}"? This cannot be undone.`)) return;
+    try {
+      await api.deleteTaskCard(card.id);
+      await refresh(null);
+    } catch (err) {
+      setError(readableError(err));
+    }
   }
 
   const explanation = detail?.explanation;
@@ -1043,6 +1067,15 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
         <>
           <section className="inspector-section">
             <h3>AI actions</h3>
+            {availableModels.length > 0 && (
+              <div className="model-picker">
+                <label>Model</label>
+                <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+                  <option value="">Default</option>
+                  {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            )}
             <div className="action-grid">
               <button onClick={() => action("generate")} disabled={!!running} className={running === "generate" ? "running" : ""}><Sparkles size={14}/> {running === "generate" ? "Generating…" : "Generate"}</button>
               <button onClick={() => action("polish")}   disabled={!!running} className={running === "polish"   ? "running" : ""}><Wand2 size={14}/> {running === "polish"   ? "Polishing…" : "Polish"}</button>
@@ -1072,6 +1105,14 @@ function JobInspector({ detail, selectedCard, platformPreviewRules, brands, camp
             <h3>Export</h3>
             <button className="action-grid-full" onClick={exportCard}>↓ Export card as JSON</button>
             <small>Downloads a JSON file you can re-import to create a new card.</small>
+          </section>
+
+          <section className="inspector-section">
+            <h3>Delete</h3>
+            <button className="action-grid-full danger" onClick={deleteCard}>
+              <Trash2 size={13}/> Permanently delete card
+            </button>
+            <small>Removes the card and its audit history. Cannot be undone.</small>
           </section>
         </>
       )}
@@ -1674,8 +1715,27 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
   const [form, setForm] = useState(empty);
   const [message, setMessage] = useState("");
   const [expanded, setExpanded] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   function update(k, v) { setForm(prev => ({ ...prev, [k]: v })); }
+  function updateEdit(k, v) { setEditForm(prev => ({ ...prev, [k]: v })); }
+
+  function startEdit(e, camp) {
+    e.stopPropagation();
+    setEditId(camp.id);
+    setEditForm({ name: camp.name, goal: camp.goal });
+  }
+
+  async function saveEdit(id) {
+    try {
+      await api.updateCampaign(id, editForm);
+      await refresh();
+      setEditId(null);
+    } catch (err) {
+      setError(readableError(err));
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -1690,7 +1750,8 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
     }
   }
 
-  async function toggleStatus(campaign) {
+  async function toggleStatus(e, campaign) {
+    e.stopPropagation();
     try {
       await api.updateCampaign(campaign.id, { status: campaign.status === "active" ? "closed" : "active" });
       await refresh();
@@ -1714,22 +1775,37 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
             const campCards = cards.filter(c => c.campaign_id === camp.id);
             const brandName = brands.find(b => b.id === camp.brand_id)?.name;
             const isOpen = expanded === camp.id;
+            const isEditing = editId === camp.id;
             return (
               <div className={`campaign-card ${camp.status === "closed" ? "closed" : ""}`} key={camp.id}>
-                <div className="campaign-card-head" onClick={() => setExpanded(isOpen ? null : camp.id)}>
-                  <div>
-                    <strong>{camp.name}</strong>
-                    {brandName && <span className="brand-label">{brandName}</span>}
-                    {camp.goal && <span className="campaign-goal">{camp.goal}</span>}
-                  </div>
-                  <div className="campaign-card-meta">
-                    <span className={`badge ${camp.status === "closed" ? "" : "badge-active"}`}>{camp.status}</span>
-                    <span className="badge">{campCards.length} card{campCards.length !== 1 ? "s" : ""}</span>
-                    <ChevronRight size={14} className={isOpen ? "rotated" : ""}/>
-                  </div>
+                <div className="campaign-card-head" onClick={() => !isEditing && setExpanded(isOpen ? null : camp.id)}>
+                  {isEditing ? (
+                    <div className="campaign-inline-edit" onClick={e => e.stopPropagation()}>
+                      <input value={editForm.name} onChange={e => updateEdit("name", e.target.value)} placeholder="Campaign name" />
+                      <textarea value={editForm.goal} onChange={e => updateEdit("goal", e.target.value)} placeholder="Goal" style={{ minHeight: 50 }} />
+                      <div className="campaign-edit-actions">
+                        <button className="primary" onClick={() => saveEdit(camp.id)}>Save</button>
+                        <button onClick={() => setEditId(null)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <strong>{camp.name}</strong>
+                        {brandName && <span className="brand-label" style={{ marginLeft: 8 }}>{brandName}</span>}
+                        {camp.goal && <span className="campaign-goal">{camp.goal}</span>}
+                      </div>
+                      <div className="campaign-card-meta">
+                        <span className={`badge ${camp.status === "closed" ? "" : "badge-active"}`}>{camp.status}</span>
+                        <span className="badge">{campCards.length} card{campCards.length !== 1 ? "s" : ""}</span>
+                        <button className="icon-btn" onClick={e => startEdit(e, camp)} title="Edit campaign"><Pencil size={12}/></button>
+                        <ChevronRight size={14} className={isOpen ? "rotated" : ""}/>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                {isOpen && (
+                {isOpen && !isEditing && (
                   <div className="campaign-card-body">
                     {campCards.length === 0 && <p>No cards assigned to this campaign yet.</p>}
                     <div className="campaign-cards-grid">
@@ -1738,7 +1814,7 @@ function CampaignsManager({ campaigns, cards, brands, refresh, selectCard, setEr
                       ))}
                     </div>
                     <div className="campaign-actions">
-                      <button type="button" onClick={() => toggleStatus(camp)}>
+                      <button type="button" onClick={e => toggleStatus(e, camp)}>
                         {camp.status === "active" ? "Close campaign" : "Reopen campaign"}
                       </button>
                     </div>

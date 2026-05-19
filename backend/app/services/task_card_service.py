@@ -442,9 +442,9 @@ def get_card_history(card_id: int) -> list[dict[str, Any]]:
 
 def update_task_card(card_id: int, payload) -> dict[str, Any]:
     allowed = [
-        "title", "objective", "output_type", "platform", "source_material",
-        "ai_role", "model_lane", "constraints", "workflow_rule",
-        "execution_plan", "preview"
+        "title", "card_type", "objective", "output_type", "platform",
+        "source_material", "ai_role", "model_lane", "constraints",
+        "workflow_rule", "execution_plan", "preview"
     ]
     updates = {}
     for field in allowed:
@@ -498,6 +498,24 @@ def export_task_card(card_id: int) -> dict[str, Any]:
             "preview": card["preview"],
         }
     }
+
+def delete_task_card(card_id: int) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM task_cards WHERE id = ?", (card_id,)).fetchone()
+        if not row:
+            raise ValueError("Task card not found.")
+        card = dict(row)
+        if card.get("parent_card_id"):
+            conn.execute(
+                "UPDATE task_cards SET child_count = MAX(0, child_count - 1) WHERE id = ?",
+                (card["parent_card_id"],),
+            )
+        conn.execute(
+            "DELETE FROM audit_events WHERE entity_type = 'task_card' AND entity_id = ?",
+            (card_id,),
+        )
+        conn.execute("DELETE FROM task_cards WHERE id = ?", (card_id,))
+        return {"deleted": card_id, "title": card["title"]}
 
 def get_platform_preview(card_id: int) -> dict[str, Any]:
     card = get_task_card(card_id)
