@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.2 — Quality + Polish Foundation
+
+- Platform-aware fallback drafts: each platform (X, LinkedIn, Instagram, TikTok, Mastodon, YouTube) now gets appropriately formatted fallback content when Ollama is unavailable
+- `polish` card action: refines existing draft content through local model, then moves card to `needs_review`; gracefully falls back to original content if model is unavailable
+- Brand context now applied to all `review_content` calls in task card flows (move-to-review, review action, generate action) — brand preferred words and forbidden claims now score correctly for task cards
+- `campaigns.py`: added error handling on create to return proper HTTP 400 instead of raw DB errors
+- `diagnostics_service.py`: use `.get()` for safe model health dict access
+- `task_card_service.py`: archive action now uses `TaskCardMove` schema instead of an anonymous class object
+
 ## v0.3.1 — First Public GitHub Stack
 
 Initial public repository stack for SocialForge AI.

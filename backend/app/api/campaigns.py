@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.db.database import get_conn, rows_to_dicts
 from app.models.schemas import CampaignCreate
 
@@ -12,10 +12,13 @@ def list_campaigns():
 
 @router.post("/campaigns")
 def create_campaign(payload: CampaignCreate):
-    with get_conn() as conn:
-        cur = conn.execute(
-            "INSERT INTO campaigns (name, goal, brand_id) VALUES (?, ?, ?)",
-            (payload.name, payload.goal, payload.brand_id)
-        )
-        row = conn.execute("SELECT * FROM campaigns WHERE id = ?", (cur.lastrowid,)).fetchone()
-        return dict(row)
+    try:
+        with get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO campaigns (name, goal, brand_id) VALUES (?, ?, ?)",
+                (payload.name, payload.goal, payload.brand_id)
+            )
+            row = conn.execute("SELECT * FROM campaigns WHERE id = ?", (cur.lastrowid,)).fetchone()
+            return dict(row)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Could not create campaign: {exc}")

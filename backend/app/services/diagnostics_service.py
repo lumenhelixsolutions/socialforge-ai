@@ -21,8 +21,8 @@ async def run_diagnostics():
         },
         {
             "name": "Ollama",
-            "ok": model_health["ok"],
-            "message": "Connected to Ollama." if model_health["ok"] else "Ollama is not reachable. Draft fallback mode is active.",
+            "ok": model_health.get("ok", False),
+            "message": "Connected to Ollama." if model_health.get("ok") else "Ollama is not reachable. Draft fallback mode is active.",
             "details": model_health
         },
         {

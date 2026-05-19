@@ -2,7 +2,7 @@
 
 ## v0.3.1 — First Public GitHub Stack
 
-Current release.
+Released.
 
 - Public-ready repository structure
 - SocialForge AI positioning
@@ -12,10 +12,21 @@ Current release.
 - Local-first social media workflow MVP
 - Draft-first safety model
 
-## v0.3.2 — Editor + Preset Polish
+## v0.3.2 — Quality + Polish Foundation
+
+In progress.
+
+- Platform-aware fallback draft generation (each platform gets appropriate tone/format)
+- `polish` card action: AI-assisted content refinement using local model
+- Brand context applied consistently to all review and generate flows
+- Proper error handling across all API routes
+- Archive action uses typed payload instead of raw object hack
+- Diagnostics service hardened against missing model health fields
+
+Upcoming in this milestone:
 
 - Better WYSIWYG editor
-- Saved brand presets
+- Saved brand presets UI
 - Saved platform presets
 - Saved task templates
 - Better inspector layout
