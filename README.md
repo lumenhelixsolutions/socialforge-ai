@@ -1,7 +1,11 @@
 # socialforge-ai
 
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="socialforge-ai logo" width="160">
+  <img src="docs/assets/hero.svg" alt="socialforge-ai header" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="socialforge-ai logo" width="120">
 </p>
 
 <h3 align="center">Draft first. Review always. Post never by accident.</h3>
@@ -9,9 +13,9 @@
 <p align="center">A local-first AI command center for social media planning, drafting, review, and scheduling.</p>
 
 <p align="center">
-  <a href="https://lumenhelixsolutions.github.io/socialforge-ai/">Launch Page</a>
+  <a href="https://lumenhelixlab.github.io/socialforge-ai/">Launch Page</a>
   <span> · </span>
-  <a href="https://github.com/lumenhelixsolutions/socialforge-ai">GitHub</a>
+  <a href="https://github.com/lumenhelixlab/socialforge-ai">GitHub</a>
   <span> · </span>
   <a href="https://lumenhelix.com">LumenHelix</a>
 </p>
@@ -31,9 +35,9 @@ SocialForge AI is a local-first command center for social media planning, conten
 ### macOS / Linux
 
 ```bash
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/lumenhelixlab/socialforge-ai.git
 cd socialforge-ai
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/LumenHelixLab/socialforge-ai.git
 cd socialforge-ai
 # Terminal 1: backend
 cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn main:app --reload --port 8787
@@ -44,9 +48,9 @@ cd frontend && npm install && npm run dev
 ### Windows (PowerShell)
 
 ```powershell
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/lumenhelixlab/socialforge-ai.git
 Set-Location socialforge-ai
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/LumenHelixLab/socialforge-ai.git
 Set-Location socialforge-ai
 # Terminal 1: backend
 cd backend; python -m venv .venv; .venv\Scripts\pip install -r requirements.txt; .venv\Scripts\uvicorn main:app --reload --port 8787
@@ -57,9 +61,9 @@ cd frontend; npm install; npm run dev
 ### Windows (Git Bash / WSL)
 
 ```bash
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/lumenhelixlab/socialforge-ai.git
 cd socialforge-ai
-git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+git clone https://github.com/LumenHelixLab/socialforge-ai.git
 cd socialforge-ai
 # Terminal 1: backend
 cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn main:app --reload --port 8787

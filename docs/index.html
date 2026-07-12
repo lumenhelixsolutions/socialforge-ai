@@ -23,8 +23,10 @@
         <a href="#features">Features</a>
         <a href="#install">Install</a>
         <a href="#docs">Docs</a>
-        <a href="https://github.com/lumenhelixsolutions/socialforge-ai" target="_blank" rel="noopener">GitHub</a>
-        <span class="parent-link">a <a href="https://lumenhelix.com" target="_blank" rel="noopener">LumenHelix</a> project</span>
+        <a href="https://github.com/lumenhelixlab/socialforge-ai" target="_blank" rel="noopener">GitHub</a>
+        <a class="parent-link" href="https://lumenhelix.com" target="_blank" rel="noopener">
+          <img src="assets/lumenhelix-lab.svg" alt="LumenHelix /lab" height="18">
+        </a>
       </nav>
       <button class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -39,7 +41,7 @@
   <main>
     <section class="hero">
       <div class="hero-visual" aria-hidden="true">
-        <svg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='sf1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='#EC4899' stop-opacity='0.75'/><stop offset='100%' stop-color='#14B8A6' stop-opacity='0.2'/></linearGradient></defs><rect x='70' y='110' width='100' height='120' rx='8' stroke='#EC4899' stroke-width='2' fill='none' opacity='0.7'><animateTransform attributeName='transform' type='translate' values='0 0;0 -8;0 0' dur='4s' repeatCount='indefinite'/></rect><rect x='150' y='170' width='100' height='120' rx='8' stroke='#14B8A6' stroke-width='2' fill='none' opacity='0.7'><animateTransform attributeName='transform' type='translate' values='0 0;0 8;0 0' dur='5s' repeatCount='indefinite'/></rect><rect x='230' y='130' width='100' height='120' rx='8' stroke='#EC4899' stroke-width='2' fill='none' opacity='0.7'><animateTransform attributeName='transform' type='translate' values='0 0;0 -6;0 0' dur='4.5s' repeatCount='indefinite'/></rect><path d='M170 170 L230 130' stroke='url(#sf1)' stroke-width='1' opacity='0.4'/><path d='M170 230 L230 250' stroke='url(#sf1)' stroke-width='1' opacity='0.4'/><circle cx='200' cy='80' r='6' fill='#EC4899'/></svg>
+        <img src="assets/hero.svg" alt="">
       </div>
 
       <div class="container">
@@ -48,7 +50,7 @@
         <p class="lead">Structured tasks, drafts, reviews, and scheduling — all local-first.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#install">Get socialforge-ai</a>
-          <a class="btn btn-secondary" href="https://github.com/lumenhelixsolutions/socialforge-ai" target="_blank" rel="noopener">View on GitHub</a>
+          <a class="btn btn-secondary" href="https://github.com/lumenhelixlab/socialforge-ai" target="_blank" rel="noopener">View on GitHub</a>
         </div>
       </div>
     </section>
@@ -108,7 +110,7 @@
             <button class="tab-btn" role="tab" id="install-tabs-2" aria-selected="false" aria-controls="panel-wsl" tabindex="-1">Git Bash / WSL</button>
           </div>
           <div class="tab-panel" id="panel-macos" role="tabpanel" aria-labelledby="install-tabs-0" aria-hidden="false">
-            <div class="terminal"><pre>git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+            <div class="terminal"><pre>git clone https://github.com/LumenHelixLab/socialforge-ai.git
 cd socialforge-ai
 # Terminal 1: backend
 cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn main:app --reload --port 8787
@@ -116,7 +118,7 @@ cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cd frontend && npm install && npm run dev</pre></div>
           </div>
           <div class="tab-panel" id="panel-windows" role="tabpanel" aria-labelledby="install-tabs-1" aria-hidden="true">
-            <div class="terminal"><pre>git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+            <div class="terminal"><pre>git clone https://github.com/LumenHelixLab/socialforge-ai.git
 Set-Location socialforge-ai
 # Terminal 1: backend
 cd backend; python -m venv .venv; .venv\Scripts\pip install -r requirements.txt; .venv\Scripts\uvicorn main:app --reload --port 8787
@@ -124,7 +126,7 @@ cd backend; python -m venv .venv; .venv\Scripts\pip install -r requirements.txt;
 cd frontend; npm install; npm run dev</pre></div>
           </div>
           <div class="tab-panel" id="panel-wsl" role="tabpanel" aria-labelledby="install-tabs-2" aria-hidden="true">
-            <div class="terminal"><pre>git clone https://github.com/lumenhelixsolutions/socialforge-ai.git
+            <div class="terminal"><pre>git clone https://github.com/LumenHelixLab/socialforge-ai.git
 cd socialforge-ai
 # Terminal 1: backend
 cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn main:app --reload --port 8787
@@ -157,11 +159,11 @@ cd frontend && npm install && npm run dev</pre></div>
         <ul class="docs-list">
           <li>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <a href="https://github.com/lumenhelixsolutions/socialforge-ai/blob/main/README.md" target="_blank" rel="noopener">README — quick start & overview</a>
+            <a href="https://github.com/lumenhelixlab/socialforge-ai/blob/main/README.md" target="_blank" rel="noopener">README — quick start & overview</a>
           </li>
           <li>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-            <a href="https://github.com/lumenhelixsolutions/socialforge-ai" target="_blank" rel="noopener">Source code on GitHub</a>
+            <a href="https://github.com/lumenhelixlab/socialforge-ai" target="_blank" rel="noopener">Source code on GitHub</a>
           </li>
           <li>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -180,10 +182,12 @@ cd frontend && npm install && npm run dev</pre></div>
       </a>
       <p>Social content with discipline. Local. Draft-first. Controlled.</p>
       <div class="footer-cta">
-        <a class="btn btn-primary" href="https://github.com/lumenhelixsolutions/socialforge-ai" target="_blank" rel="noopener">Star on GitHub</a>
+        <a class="btn btn-primary" href="https://github.com/lumenhelixlab/socialforge-ai" target="_blank" rel="noopener">Star on GitHub</a>
       </div>
       <p class="parent-attribution">
-        A <a href="https://lumenhelix.com" target="_blank" rel="noopener">LumenHelix</a> project · Applied Symbolic Dynamics & Reversible Computation
+        <a href="https://lumenhelix.com" target="_blank" rel="noopener">
+          <img src="assets/lumenhelix-lab.svg" alt="LumenHelix /lab" height="20">
+        </a>
       </p>
     </div>
   </footer>
